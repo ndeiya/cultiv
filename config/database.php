@@ -6,8 +6,8 @@
 
 class Database
 {
-    private static ?PDO $instance = null;
-    private const DB_CHARSET = 'utf8mb4';
+    private static $instance = null;
+    const DB_CHARSET = 'utf8mb4';
 
     /**
      * Get the singleton PDO instance.
