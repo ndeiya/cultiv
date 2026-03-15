@@ -1,0 +1,32 @@
+# Dependencies
+/vendor/
+
+# Configuration
+.env
+.env.local
+.env.*.local
+
+# Storage and Logs
+/storage/logs/
+/storage/rate_limits/
+/storage/uploads/
+!storage/uploads/.gitkeep
+
+# Application specific
+action_plan.md
+API_Endpoints.md
+Database_schema.md
+Implementation_Plan.md
+UI_Screen_Map.md 
+ui_designs/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.bak
+*.tmp
+*.temp

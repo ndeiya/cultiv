@@ -1,0 +1,17 @@
+{
+  "name": "Cultiv Farm Management",
+  "short_name": "Cultiv",
+  "description": "Cultiv Farm Workforce & Operations Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8f6",
+  "theme_color": "#13ec13",
+  "icons": [
+    {
+      "src": "/assets/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

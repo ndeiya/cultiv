@@ -1,0 +1,15 @@
+{
+    "name": "cultiv/farm-management",
+    "description": "Farm Workforce & Operations Management System",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "predis/predis": "*",
+        "mpdf/mpdf": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cultiv\\": "app/"
+        }
+    }
+}
