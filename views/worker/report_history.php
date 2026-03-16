@@ -3,9 +3,15 @@
 <!-- Main Content -->
 <div class="max-w-6xl mx-auto px-4 py-8 mb-24 md:mb-0">
     <!-- Header -->
-    <div class="flex items-center gap-2 mb-8">
-        <span class="material-symbols-outlined text-primary text-3xl">history</span>
-        <h2 class="text-3xl font-black tracking-tight">My Reports</h2>
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-3xl">history</span>
+            <h2 class="text-3xl font-black tracking-tight">My Reports</h2>
+        </div>
+        <a href="/worker/reports/create" class="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-slate-900 font-bold rounded-xl hover:brightness-95 hover:shadow-lg hover:shadow-primary/30 transition-all transition-transform active:scale-95">
+            <span class="material-symbols-outlined">add_circle</span>
+            Submit New Report
+        </a>
     </div>
 
     <!-- Alert Messages -->
@@ -103,8 +109,12 @@
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4">
-                                <?php if ($report['status'] === 'open'): ?>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-orange-500/10 text-orange-500">Pending</span>
+                                <?php if ($report['status'] === 'pending'): ?>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/10 text-amber-600 flex items-center gap-1 w-fit">
+                                        <span class="material-symbols-outlined text-[10px]">schedule</span> Pending Approval
+                                    </span>
+                                <?php elseif ($report['status'] === 'open'): ?>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-orange-500/10 text-orange-500">Open</span>
                                 <?php elseif ($report['status'] === 'resolved'): ?>
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Resolved</span>
                                 <?php else: ?>

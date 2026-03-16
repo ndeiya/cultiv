@@ -120,4 +120,34 @@ abstract class BaseModel
         $stmt = $this->scopedQuery($sql, $params);
         return $stmt->rowCount() > 0;
     }
+
+    /**
+     * Update approval status of a record.
+     */
+    public function updateApprovalStatus(int $id, int $farmId, string $status): bool
+    {
+        $statusColumn = ($this->table === 'reports') ? 'status' : 'approval_status';
+        
+        $sql = "UPDATE {$this->table} SET {$statusColumn} = :status WHERE id = :id AND farm_id = :farm_id AND {$this->tenantColumn} = :tenant_id";
+        $params = [
+            'id' => $id,
+            'farm_id' => $farmId,
+            'status' => $status
+        ];
+
+        $stmt = $this->scopedQuery($sql, $params);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Get all pending records for a farm.
+     */
+    public function getPendingByFarm(int $farmId): array
+    {
+        $statusColumn = ($this->table === 'reports') ? 'status' : 'approval_status';
+        
+        $sql = "SELECT * FROM {$this->table} WHERE farm_id = :farm_id AND {$statusColumn} = 'pending' AND {$this->tenantColumn} = :tenant_id ORDER BY id DESC";
+        $stmt = $this->scopedQuery($sql, ['farm_id' => $farmId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

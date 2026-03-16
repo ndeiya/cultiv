@@ -20,10 +20,20 @@
                 <span class="text-2xl font-bold"><?= $pagination['total'] ?? count($reports) ?></span>
             </div>
         </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-amber-500/20 shadow-sm">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-sm text-amber-500">schedule</span>
+                <span class="text-xs font-medium text-slate-500 uppercase">Pending Approval</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <?php $pending = count(array_filter($reports, fn($r) => $r['status'] === 'pending')); ?>
+                <span class="text-2xl font-bold text-amber-500"><?= $pending ?></span>
+            </div>
+        </div>
         <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-orange-500/20 shadow-sm">
             <div class="flex items-center gap-2 mb-2">
                 <span class="material-symbols-outlined text-sm text-orange-500">warning</span>
-                <span class="text-xs font-medium text-slate-500 uppercase">Open Scopes</span>
+                <span class="text-xs font-medium text-slate-500 uppercase">Open Issues</span>
             </div>
             <div class="flex items-baseline gap-2">
                 <?php $open = count(array_filter($reports, fn($r) => $r['status'] === 'open')); ?>
@@ -123,8 +133,12 @@
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4">
-                                <?php if ($report['status'] === 'open'): ?>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-orange-500/10 text-orange-500">Pending</span>
+                                <?php if ($report['status'] === 'pending'): ?>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/10 text-amber-600 flex items-center gap-1 w-fit">
+                                        <span class="material-symbols-outlined text-[10px]">schedule</span> Pending
+                                    </span>
+                                <?php elseif ($report['status'] === 'open'): ?>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-orange-500/10 text-orange-500">Open</span>
                                 <?php elseif ($report['status'] === 'resolved'): ?>
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Resolved</span>
                                 <?php else: ?>
@@ -132,7 +146,12 @@
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <?php if ($report['status'] === 'open'): ?>
+                                <?php if ($report['status'] === 'pending'): ?>
+                                <button onclick="approveReport(<?= $report['id'] ?>)" class="text-green-600 hover:text-green-700 font-bold text-sm inline-flex items-center gap-1 mr-2">
+                                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                                    Approve
+                                </button>
+                                <?php elseif ($report['status'] === 'open'): ?>
                                 <button onclick="resolveReport(<?= $report['id'] ?>)" class="text-primary hover:text-primary/80 font-bold text-sm inline-flex items-center gap-1">
                                     <span class="material-symbols-outlined text-sm">check_circle</span>
                                     Resolve
@@ -150,6 +169,33 @@
 </div>
 
 <script>
+function approveReport(id) {
+    if (!confirm('Approve this report and mark it as open?')) return;
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    fetch('/owner/approvals/approve', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({
+            type: 'report',
+            id: id
+        })
+    }).then(res => res.json()).then(data => {
+        if(data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Failed to approve report.');
+        }
+    }).catch(err => {
+        console.error(err);
+        alert('A network error occurred.');
+    });
+}
+
 function resolveReport(id) {
     if (!confirm('Mark this report as resolved?')) return;
     

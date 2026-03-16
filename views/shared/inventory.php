@@ -14,10 +14,10 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
             <h2 class="text-2xl font-bold">Farm Inventory</h2>
             <p class="text-sm text-slate-500">Track stock levels of seeds, fertilizers, feeds, and supplies.</p>
         </div>
-        <?php if (in_array($user['role'], ['owner', 'supervisor'])): ?>
+        <?php if (in_array($user['role'], ['owner', 'supervisor', 'worker'])): ?>
         <button onclick="document.getElementById('addItemModal').showModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-slate-900 font-bold rounded-lg hover:brightness-95 transition-all w-fit">
             <span class="material-symbols-outlined text-sm">add_box</span>
-            Add New Item
+            <?= $user['role'] === 'worker' ? 'Submit New Item' : 'Add New Item' ?>
         </button>
         <?php endif; ?>
     </div>
@@ -46,7 +46,16 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                         <?php foreach ($inventory as $item): ?>
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                 <td class="px-6 py-4">
-                                    <span class="font-bold text-slate-900 dark:text-white"><?= htmlspecialchars($item['item_name']) ?></span>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="font-bold text-slate-900 dark:text-white"><?= htmlspecialchars($item['item_name']) ?></span>
+                                        <?php if (($item['approval_status'] ?? 'approved') === 'pending'): ?>
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center gap-1 w-fit">
+                                                <span class="material-symbols-outlined text-[10px]">schedule</span> Pending
+                                            </span>
+                                        <?php elseif (($item['approval_status'] ?? 'approved') === 'rejected'): ?>
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 w-fit">Rejected</span>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
@@ -56,9 +65,11 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                         <span class="text-xs font-bold text-slate-400 uppercase"><?= htmlspecialchars($item['unit']) ?></span>
                                         
                                         <!-- Quick Update Button (Worker/Sup/Owner) -->
+                                        <?php if (($item['approval_status'] ?? 'approved') === 'approved'): ?>
                                         <button onclick="openQuantityModal(<?= $item['id'] ?>, '<?= htmlspecialchars($item['item_name'], ENT_QUOTES) ?>', <?= $item['quantity'] ?>)" class="ml-2 p-1 text-primary hover:bg-primary/10 rounded transition-colors">
                                             <span class="material-symbols-outlined text-sm">edit_square</span>
                                         </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
@@ -77,6 +88,8 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                                 <span class="material-symbols-outlined text-lg">delete</span>
                                             </button>
                                         </form>
+                                        <?php elseif ($user['role'] === 'worker' && ($item['approval_status'] ?? 'approved') === 'pending'): ?>
+                                            <span class="text-[10px] text-slate-400 italic">Awaiting Approval</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>

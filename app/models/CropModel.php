@@ -45,19 +45,20 @@ class CropModel extends BaseModel
     {
         $tenantId = $this->getCurrentTenantId();
         $stmt = $this->db->prepare('
-            INSERT INTO crops (tenant_id, farm_id, name, field_name, planting_date, expected_harvest, growth_stage, health_status, updated_by, updated_at)
-            VALUES (:tenant_id, :farm_id, :name, :field_name, :planting_date, :expected_harvest, :growth_stage, :health_status, :updated_by, NOW())
+            INSERT INTO crops (tenant_id, farm_id, name, field_name, planting_date, expected_harvest, growth_stage, health_status, approval_status, updated_by, updated_at)
+            VALUES (:tenant_id, :farm_id, :name, :field_name, :planting_date, :expected_harvest, :growth_stage, :health_status, :approval_status, :updated_by, NOW())
         ');
         $stmt->execute([
-            'tenant_id' => $tenantId,
-            'farm_id' => $data['farm_id'],
-            'name' => $data['name'],
-            'field_name' => $data['field_name'] ?? null,
-            'planting_date' => $data['planting_date'] ?? null,
+            'tenant_id'        => $tenantId,
+            'farm_id'          => $data['farm_id'],
+            'name'             => $data['name'],
+            'field_name'       => $data['field_name'] ?? null,
+            'planting_date'    => $data['planting_date'] ?? null,
             'expected_harvest' => $data['expected_harvest'] ?? null,
-            'growth_stage' => $data['growth_stage'] ?? 'Planting',
-            'health_status' => $data['health_status'] ?? 'good',
-            'updated_by' => $data['updated_by']
+            'growth_stage'     => $data['growth_stage'] ?? 'Planting',
+            'health_status'    => $data['health_status'] ?? 'good',
+            'approval_status'  => $data['approval_status'] ?? 'approved',
+            'updated_by'       => $data['updated_by']
         ]);
         return (int) $this->db->lastInsertId();
     }

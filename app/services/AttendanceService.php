@@ -2,12 +2,14 @@
 
 class AttendanceService {
     private AttendanceModel $attendanceModel;
+    private UserModel $userModel;
     private ShiftService $shiftService;
     private NotificationService $notificationService;
     private PDO $db;
 
     public function __construct() {
         $this->attendanceModel = new AttendanceModel();
+        $this->userModel = new UserModel();
         $this->shiftService = new ShiftService();
         $this->notificationService = new NotificationService();
         $this->db = Database::getInstance();

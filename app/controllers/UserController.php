@@ -7,10 +7,12 @@
 class UserController
 {
     private UserModel $userModel;
+    private PayrollModel $payrollModel;
 
     public function __construct()
     {
         $this->userModel = new UserModel();
+        $this->payrollModel = new PayrollModel();
     }
 
     /**
@@ -76,7 +78,7 @@ class UserController
             redirect('/owner/workers/create');
         }
 
-        $this->userModel->create([
+        $userId = $this->userModel->create([
             'farm_id' => $user['farm_id'],
             'name' => $name,
             'email' => empty($email) ? null : $email,
@@ -85,6 +87,19 @@ class UserController
             'role' => $role,
             'status' => 'active'
         ]);
+
+        // Save payment profile
+        $this->payrollModel->savePaymentProfile([
+            'user_id' => $userId,
+            'payment_type' => sanitize_input($_POST['payment_type'] ?? 'hourly'),
+            'hourly_rate' => (float)($_POST['hourly_rate'] ?? 0),
+            'daily_rate' => (float)($_POST['daily_rate'] ?? 0),
+            'monthly_salary' => (float)($_POST['monthly_salary'] ?? 0),
+            'unit_rate' => (float)($_POST['unit_rate'] ?? 0),
+            'overtime_rate' => (float)($_POST['overtime_rate'] ?? 0),
+            'overtime_threshold' => (int)($_POST['overtime_threshold'] ?? 0)
+        ]);
+
         AuditService::logAction('create', 'user');
 
         $_SESSION['success'] = "Worker added successfully.";
@@ -113,8 +128,11 @@ class UserController
             redirect('/profile'); // or wherever they edit their own profile
         }
 
+        $profile = $this->payrollModel->getPaymentProfile($id);
+
         view('owner/worker_form', [
             'worker' => $worker,
+            'profile' => $profile,
             'title' => 'Edit Worker'
         ]);
     }
@@ -169,6 +187,19 @@ class UserController
             'phone' => empty($phone) ? null : $phone,
             'role' => $role
         ]);
+
+        // Update payment profile
+        $this->payrollModel->savePaymentProfile([
+            'user_id' => $id,
+            'payment_type' => sanitize_input($_POST['payment_type'] ?? 'hourly'),
+            'hourly_rate' => (float)($_POST['hourly_rate'] ?? 0),
+            'daily_rate' => (float)($_POST['daily_rate'] ?? 0),
+            'monthly_salary' => (float)($_POST['monthly_salary'] ?? 0),
+            'unit_rate' => (float)($_POST['unit_rate'] ?? 0),
+            'overtime_rate' => (float)($_POST['overtime_rate'] ?? 0),
+            'overtime_threshold' => (int)($_POST['overtime_threshold'] ?? 0)
+        ]);
+
         AuditService::logAction('update', 'user', $id);
 
         $_SESSION['success'] = "Worker updated successfully.";

@@ -14,10 +14,10 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
             <h2 class="text-2xl font-bold">Livestock & Animals</h2>
             <p class="text-sm text-slate-500">Manage tags, health status, and vaccination schedules.</p>
         </div>
-        <?php if (in_array($user['role'], ['owner', 'supervisor'])): ?>
+        <?php if (in_array($user['role'], ['owner', 'supervisor', 'worker'])): ?>
         <button onclick="document.getElementById('addAnimalModal').showModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-slate-900 font-bold rounded-lg hover:brightness-95 transition-all w-fit">
             <span class="material-symbols-outlined text-sm">add_circle</span>
-            Register Animal
+            <?= $user['role'] === 'worker' ? 'Submit Registration' : 'Register Animal' ?>
         </button>
         <?php endif; ?>
     </div>
@@ -69,6 +69,7 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                         <th class="px-6 py-4">Tag #</th>
                         <th class="px-6 py-4">Species / Breed</th>
                         <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4">Birth Date / Age</th>
                         <th class="px-6 py-4">Weight</th>
                         <th class="px-6 py-4">Next Vaccination</th>
                         <th class="px-6 py-4 text-right">Actions</th>
@@ -95,17 +96,36 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <?php
-                                    $badge = match($animal['health_status']) {
-                                        'good'    => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                        'sick'    => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-                                        'injured' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-                                        default   => 'bg-slate-100 text-slate-600'
-                                    };
-                                    ?>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase <?= $badge ?>">
-                                        <?= htmlspecialchars($animal['health_status']) ?>
-                                    </span>
+                                    <?php if (($animal['approval_status'] ?? 'approved') === 'pending'): ?>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center gap-1 w-fit">
+                                            <span class="material-symbols-outlined text-[10px]">schedule</span> Pending
+                                        </span>
+                                    <?php elseif (($animal['approval_status'] ?? 'approved') === 'rejected'): ?>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Rejected</span>
+                                    <?php else: ?>
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase <?= $badge ?>">
+                                            <?= htmlspecialchars($animal['health_status']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                                    <?php if ($animal['date_of_birth']): ?>
+                                        <div class="flex flex-col">
+                                            <span><?= date('M j, Y', strtotime($animal['date_of_birth'])) ?></span>
+                                            <span class="text-[10px] font-bold text-primary uppercase">
+                                                <?php
+                                                $dob = new DateTime($animal['date_of_birth']);
+                                                $now = new DateTime();
+                                                $age = $now->diff($dob);
+                                                if ($age->y > 0) echo $age->y . 'yr ' . $age->m . 'mo';
+                                                elseif ($age->m > 0) echo $age->m . 'mo ' . $age->d . 'd';
+                                                else echo $age->d . ' days old';
+                                                ?>
+                                            </span>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-slate-400">-</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                                     <?= $animal['weight'] ? htmlspecialchars($animal['weight']) . ' kg' : '-' ?>
@@ -134,6 +154,8 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                                 <span class="material-symbols-outlined text-lg">delete</span>
                                             </button>
                                         </form>
+                                        <?php elseif ($user['role'] === 'worker' && ($animal['approval_status'] ?? 'approved') === 'pending'): ?>
+                                            <span class="text-[10px] text-slate-400 italic">Awaiting Approval</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -174,6 +196,12 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                 </div>
             </div>
 
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Date of Birth</label>
+                <input type="date" name="date_of_birth" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
+                <p class="text-[10px] text-slate-400">(Optional) Helps track animal age automatically.</p>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Weight (kg)</label>
@@ -189,10 +217,17 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                 </div>
             </div>
 
-            <div class="space-y-1">
-                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Next Vaccination Due</label>
-                <input type="date" name="vaccination_due" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Next Vaccination Due</label>
+                    <input type="date" name="vaccination_due" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Quantity to Register</label>
+                    <input type="number" name="quantity" value="1" min="1" max="100" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
+                </div>
             </div>
+            <p class="text-[10px] text-slate-400">Specify how many animals with these same details to register (Tag numbers will be suffixed).</p>
 
             <button type="submit" class="w-full py-3 bg-primary text-slate-900 font-bold rounded-xl hover:brightness-95 transition-all mt-6">
                 Register Animal
@@ -230,6 +265,11 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                 </div>
             </div>
 
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Date of Birth</label>
+                <input type="date" name="date_of_birth" id="edit_date_of_birth" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Weight (kg)</label>
@@ -263,6 +303,7 @@ function openEditModal(animal) {
     document.getElementById('edit_tag_number').value = animal.tag_number;
     document.getElementById('edit_species').value = animal.species;
     document.getElementById('edit_breed').value = animal.breed || '';
+    document.getElementById('edit_date_of_birth').value = animal.date_of_birth || '';
     document.getElementById('edit_weight').value = animal.weight || '';
     document.getElementById('edit_health_status').value = animal.health_status;
     document.getElementById('edit_vaccination_due').value = animal.vaccination_due || '';

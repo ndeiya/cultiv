@@ -129,12 +129,17 @@ class ProductionModel extends BaseModel
     /**
      * Delete a production record.
      */
-    public function delete(int $id): bool
+    public function delete(int $id, ?int $farmId = null): bool
     {
-        $stmt = $this->scopedQuery(
-            'DELETE FROM production_records WHERE id = :id AND tenant_id = :tenant_id',
-            ['id' => $id]
-        );
+        $sql = 'DELETE FROM production_records WHERE id = :id AND tenant_id = :tenant_id';
+        $params = ['id' => $id];
+
+        if ($farmId !== null) {
+            $sql .= ' AND farm_id = :farm_id';
+            $params['farm_id'] = $farmId;
+        }
+
+        $stmt = $this->scopedQuery($sql, $params);
         return $stmt->rowCount() > 0;
     }
 }

@@ -45,8 +45,8 @@ class AnimalModel extends BaseModel
     {
         $tenantId = $this->getCurrentTenantId();
         $stmt = $this->db->prepare('
-            INSERT INTO animals (tenant_id, farm_id, tag_number, species, breed, health_status, weight, vaccination_due, created_at, updated_at)
-            VALUES (:tenant_id, :farm_id, :tag_number, :species, :breed, :health_status, :weight, :vaccination_due, NOW(), NOW())
+            INSERT INTO animals (tenant_id, farm_id, tag_number, species, breed, date_of_birth, health_status, weight, vaccination_due, approval_status, created_at, updated_at)
+            VALUES (:tenant_id, :farm_id, :tag_number, :species, :breed, :date_of_birth, :health_status, :weight, :vaccination_due, :approval_status, NOW(), NOW())
         ');
         $stmt->execute([
             'tenant_id'       => $tenantId,
@@ -54,9 +54,11 @@ class AnimalModel extends BaseModel
             'tag_number'      => $data['tag_number'],
             'species'         => $data['species'],
             'breed'           => $data['breed'] ?? null,
+            'date_of_birth'   => $data['date_of_birth'] ?? null,
             'health_status'   => $data['health_status'] ?? 'good',
             'weight'          => $data['weight'] ?? null,
-            'vaccination_due' => $data['vaccination_due'] ?? null
+            'vaccination_due' => $data['vaccination_due'] ?? null,
+            'approval_status' => $data['approval_status'] ?? 'approved'
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -69,6 +71,7 @@ class AnimalModel extends BaseModel
         $stmt = $this->scopedQuery('
             UPDATE animals 
             SET tag_number = :tag_number, species = :species, breed = :breed, 
+                date_of_birth = :date_of_birth,
                 health_status = :health_status, weight = :weight, 
                 vaccination_due = :vaccination_due, updated_at = NOW()
             WHERE id = :id AND farm_id = :farm_id AND tenant_id = :tenant_id
@@ -78,6 +81,7 @@ class AnimalModel extends BaseModel
             'tag_number'      => $data['tag_number'],
             'species'         => $data['species'],
             'breed'           => $data['breed'] ?? null,
+            'date_of_birth'   => $data['date_of_birth'] ?? null,
             'health_status'   => $data['health_status'],
             'weight'          => $data['weight'] ?? null,
             'vaccination_due' => $data['vaccination_due'] ?? null

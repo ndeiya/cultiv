@@ -34,25 +34,48 @@ class AnimalController
      */
     public function store(): void
     {
-        role_gate(['owner', 'supervisor']);
+        role_gate(['owner', 'supervisor', 'worker']);
         require_csrf();
-
+ 
         $user = current_user();
         $data = sanitize_array($_POST);
-
+ 
         $missing = validate_required(['tag_number', 'species', 'health_status'], $data);
         if ($missing) {
             flash('error', 'Please fill in all required fields: ' . implode(', ', $missing));
             redirect('/' . $user['role'] . '/animals');
             return;
         }
-
+ 
         $data['farm_id'] = $user['farm_id'];
-
-        $id = $this->animalModel->create($data);
-        AuditService::logAction('create', 'animal', $id);
-
-        flash('success', 'Animal added successfully.');
+        $data['approval_status'] = ($user['role'] === 'worker') ? 'pending' : 'approved';
+ 
+        $quantity = max(1, min(100, (int)($data['quantity'] ?? 1)));
+        unset($data['quantity']);
+ 
+        $baseTag = $data['tag_number'];
+        $ids = [];
+ 
+        for ($i = 0; $i < $quantity; $i++) {
+            if ($quantity > 1) {
+                // Suffix tag number if multiple are being added
+                $data['tag_number'] = $baseTag . ' - ' . ($i + 1);
+            }
+            $ids[] = $this->animalModel->create($data);
+        }
+ 
+        foreach ($ids as $id) {
+            AuditService::logAction('create', 'animal', $id);
+        }
+ 
+        if ($user['role'] === 'worker') {
+            flash('success', 'Your registration request has been sent for approval.');
+        } elseif ($quantity > 1) {
+            flash('success', $quantity . ' animals registered successfully.');
+        } else {
+            flash('success', 'Animal added successfully.');
+        }
+ 
         redirect('/' . $user['role'] . '/animals');
     }
 

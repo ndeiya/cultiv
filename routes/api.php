@@ -40,6 +40,12 @@ $router->group('/api', function (Router $router) {
     $router->get('/production/worker', 'ProductionController', 'apiGetWorkerProduction');
     $router->post('/production', 'ProductionController', 'apiStore');
 
+    // ── Task Assignment (Gap Remediation) ─────────────
+    $router->get('/tasks', 'TaskController', 'apiGetTasks');
+    $router->post('/tasks', 'TaskController', 'apiCreate');
+    $router->put('/tasks', 'TaskController', 'apiUpdateStatus');
+    $router->delete('/tasks', 'TaskController', 'apiDelete');
+
     // ── Synchronization (Phase 5.1) ──────────────────────
     $router->post('/sync/batch', 'SyncController', 'batchSync');
 });

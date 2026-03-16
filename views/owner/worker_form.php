@@ -123,6 +123,69 @@ require_once __DIR__ . '/../layouts/app_header.php';
                 </div>
             </section>
 
+            <!-- Payment Profile Settings -->
+            <section id="payment_profile_section" class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">payments</span>
+                    Payment Profile
+                </h3>
+                
+                <?php 
+                $p = $profile ?? [
+                    'payment_type' => 'hourly',
+                    'hourly_rate' => 0,
+                    'daily_rate' => 0,
+                    'monthly_salary' => 0,
+                    'unit_rate' => 0,
+                    'overtime_rate' => 0,
+                    'overtime_threshold' => 40
+                ];
+                ?>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Payment Type</label>
+                        <select name="payment_type" id="payment_type" class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary py-3" onchange="updateRateFields()">
+                            <option value="hourly" <?= $p['payment_type'] === 'hourly' ? 'selected' : '' ?>>Hourly (Based on clocked hours)</option>
+                            <option value="daily" <?= $p['payment_type'] === 'daily' ? 'selected' : '' ?>>Daily (Based on days attended)</option>
+                            <option value="monthly" <?= $p['payment_type'] === 'monthly' ? 'selected' : '' ?>>Monthly (Fixed salary)</option>
+                            <option value="unit" <?= $p['payment_type'] === 'unit' ? 'selected' : '' ?>>Unit (Based on production quantity)</option>
+                        </select>
+                    </div>
+
+                    <div id="rate_fields" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div id="hourly_field" class="payment-field">
+                            <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Hourly Rate ($)</label>
+                            <input type="number" step="0.01" name="hourly_rate" value="<?= $p['hourly_rate'] ?>" class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div id="daily_field" class="payment-field hidden">
+                            <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Daily Rate ($)</label>
+                            <input type="number" step="0.01" name="daily_rate" value="<?= $p['daily_rate'] ?>" class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div id="monthly_field" class="payment-field hidden">
+                            <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Monthly Salary ($)</label>
+                            <input type="number" step="0.01" name="monthly_salary" value="<?= $p['monthly_salary'] ?>" class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div id="unit_field" class="payment-field hidden">
+                            <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Unit Rate ($)</label>
+                            <input type="number" step="0.01" name="unit_rate" value="<?= $p['unit_rate'] ?>" class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary">
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-primary/5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Overtime Threshold (Hrs/Period)</label>
+                            <input type="number" name="overtime_threshold" value="<?= $p['overtime_threshold'] ?>" class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary">
+                            <p class="text-[10px] text-slate-400 mt-1">Set to 0 to disable overtime.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Overtime Hourly Rate ($)</label>
+                            <input type="number" step="0.01" name="overtime_rate" value="<?= $p['overtime_rate'] ?>" class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Form Actions -->
             <div class="flex items-center justify-end gap-4 pt-4">
                 <a href="/owner/workers" class="px-6 py-3 font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
@@ -136,5 +199,19 @@ require_once __DIR__ . '/../layouts/app_header.php';
         </form>
     </div>
 </div>
+
+<script>
+function updateRateFields() {
+    const type = document.getElementById('payment_type').value;
+    document.querySelectorAll('.payment-field').forEach(el => el.classList.add('hidden'));
+    const targetField = document.getElementById(type + '_field');
+    if (targetField) {
+        targetField.classList.remove('hidden');
+    }
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', updateRateFields);
+</script>
 
 <?php require_once __DIR__ . '/../layouts/app_footer.php'; ?>

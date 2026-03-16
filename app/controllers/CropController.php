@@ -39,26 +39,43 @@ class CropController
      */
     public function store(): void
     {
-        role_gate(['owner', 'supervisor']);
+        role_gate(['owner', 'supervisor', 'worker']);
         require_csrf();
-
+ 
         $user = current_user();
         $data = sanitize_array($_POST);
-
+ 
         $missing = validate_required(['name', 'growth_stage', 'health_status'], $data);
         if ($missing) {
             flash('error', 'Please fill in all required fields: ' . implode(', ', $missing));
             redirect('/' . $user['role'] . '/crops');
             return;
         }
-
+ 
         $data['farm_id'] = $user['farm_id'];
         $data['updated_by'] = $user['id'];
-
-        $id = $this->cropModel->create($data);
-        AuditService::logAction('create', 'crop', $id);
-
-        flash('success', 'Crop added successfully.');
+        $data['approval_status'] = ($user['role'] === 'worker') ? 'pending' : 'approved';
+ 
+        $quantity = max(1, min(100, (int)($data['quantity'] ?? 1)));
+        unset($data['quantity']); // Don't pass quantity to model create
+ 
+        $ids = [];
+        for ($i = 0; $i < $quantity; $i++) {
+            $ids[] = $this->cropModel->create($data);
+        }
+ 
+        foreach ($ids as $id) {
+            AuditService::logAction('create', 'crop', $id);
+        }
+ 
+        if ($user['role'] === 'worker') {
+            flash('success', 'Your submission has been sent for approval.');
+        } elseif ($quantity > 1) {
+            flash('success', $quantity . ' crops added successfully.');
+        } else {
+            flash('success', 'Crop added successfully.');
+        }
+        
         redirect('/' . $user['role'] . '/crops');
     }
 
@@ -147,7 +164,22 @@ class CropController
         $data['farm_id'] = $user['farm_id'];
         $data['updated_by'] = $user['id'];
 
-        $id = $this->cropModel->create($data);
-        json_response(['success' => true, 'id' => $id, 'message' => 'Crop created successfully']);
+        $quantity = max(1, min(100, (int)($data['quantity'] ?? 1)));
+        unset($data['quantity']);
+
+        $ids = [];
+        for ($i = 0; $i < $quantity; $i++) {
+            $ids[] = $this->cropModel->create($data);
+        }
+
+        foreach ($ids as $id) {
+            AuditService::logAction('create', 'crop', $id);
+        }
+
+        json_response([
+            'success' => true, 
+            'ids' => $ids, 
+            'message' => $quantity > 1 ? "$quantity crops created successfully" : 'Crop created successfully'
+        ]);
     }
 }

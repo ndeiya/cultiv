@@ -34,25 +34,30 @@ class InventoryController
      */
     public function store(): void
     {
-        role_gate(['owner', 'supervisor']);
+        role_gate(['owner', 'supervisor', 'worker']);
         require_csrf();
-
+ 
         $user = current_user();
         $data = sanitize_array($_POST);
-
+ 
         $missing = validate_required(['item_name', 'quantity', 'unit'], $data);
         if ($missing) {
             flash('error', 'Please fill in all required fields.');
             redirect('/' . $user['role'] . '/inventory');
             return;
         }
-
+ 
         $data['farm_id'] = $user['farm_id'];
-
+        $data['approval_status'] = ($user['role'] === 'worker') ? 'pending' : 'approved';
+ 
         $id = $this->inventoryModel->create($data);
         AuditService::logAction('create', 'inventory', $id);
-
-        flash('success', 'Item added to inventory.');
+ 
+        if ($user['role'] === 'worker') {
+            flash('success', 'Item submitted for approval.');
+        } else {
+            flash('success', 'Item added to inventory.');
+        }
         redirect('/' . $user['role'] . '/inventory');
     }
 

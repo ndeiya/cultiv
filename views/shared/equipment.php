@@ -14,10 +14,10 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
             <h2 class="text-2xl font-bold">Equipment & Machinery</h2>
             <p class="text-sm text-slate-500">Monitor status, track maintenance, and manage farm assets.</p>
         </div>
-        <?php if (in_array($user['role'], ['owner', 'supervisor'])): ?>
+        <?php if (in_array($user['role'], ['owner', 'supervisor', 'worker'])): ?>
         <button onclick="document.getElementById('addEquipmentModal').showModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-slate-900 font-bold rounded-lg hover:brightness-95 transition-all w-fit">
             <span class="material-symbols-outlined text-sm">add_circle</span>
-            Add Equipment
+            <?= $user['role'] === 'worker' ? 'Submit New Equipment' : 'Add Equipment' ?>
         </button>
         <?php endif; ?>
     </div>
@@ -68,6 +68,7 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                     <tr>
                         <th class="px-6 py-4">Asset Name</th>
                         <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4">Acquired On</th>
                         <th class="px-6 py-4">Last Maintenance</th>
                         <th class="px-6 py-4">Next Maintenance</th>
                         <th class="px-6 py-4 text-right">Actions</th>
@@ -87,17 +88,28 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                     <span class="font-bold text-slate-900 dark:text-white"><?= htmlspecialchars($item['name']) ?></span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <?php
-                                    $badge = match($item['status']) {
-                                        'working' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                        'maintenance' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-                                        'broken' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-                                        default => 'bg-slate-100 text-slate-600'
-                                    };
-                                    ?>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase <?= $badge ?>">
-                                        <?= htmlspecialchars($item['status']) ?>
-                                    </span>
+                                    <?php if (($item['approval_status'] ?? 'approved') === 'pending'): ?>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center gap-1 w-fit">
+                                            <span class="material-symbols-outlined text-[10px]">schedule</span> Pending
+                                        </span>
+                                    <?php elseif (($item['approval_status'] ?? 'approved') === 'rejected'): ?>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Rejected</span>
+                                    <?php else: ?>
+                                        <?php
+                                        $badge = match($item['status']) {
+                                            'working' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                            'maintenance' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                                            'broken' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                                            default => 'bg-slate-100 text-slate-600'
+                                        };
+                                        ?>
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase <?= $badge ?>">
+                                            <?= htmlspecialchars($item['status']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                                    <?= $item['acquisition_date'] ? date('M j, Y', strtotime($item['acquisition_date'])) : '-' ?>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                                     <?= $item['last_maintenance'] ? date('M j, Y', strtotime($item['last_maintenance'])) : '-' ?>
@@ -125,6 +137,8 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                                 <span class="material-symbols-outlined text-lg">delete</span>
                                             </button>
                                         </form>
+                                        <?php elseif ($user['role'] === 'worker' && ($item['approval_status'] ?? 'approved') === 'pending'): ?>
+                                            <span class="text-[10px] text-slate-400 italic">Awaiting Approval</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -154,13 +168,19 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                 <input type="text" name="name" required placeholder="e.g. Tractor, Water Pump" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
             </div>
             
-            <div class="space-y-1">
-                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Status</label>
-                <select name="status" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3 appearance-none">
-                    <option value="working">Working</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="broken">Broken</option>
-                </select>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Status</label>
+                    <select name="status" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3 appearance-none">
+                        <option value="working">Working</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="broken">Broken</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Acquisition Date</label>
+                    <input type="date" name="acquisition_date" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
+                </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -199,13 +219,19 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                 <input type="text" name="name" id="edit_name" required class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
             </div>
             
-            <div class="space-y-1">
-                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Status</label>
-                <select name="status" id="edit_status" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3 appearance-none">
-                    <option value="working">Working</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="broken">Broken</option>
-                </select>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Status</label>
+                    <select name="status" id="edit_status" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3 appearance-none">
+                        <option value="working">Working</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="broken">Broken</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Acquisition Date</label>
+                    <input type="date" name="acquisition_date" id="edit_acquisition_date" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
+                </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -231,6 +257,7 @@ function openEditModal(item) {
     document.getElementById('edit_id').value = item.id;
     document.getElementById('edit_name').value = item.name;
     document.getElementById('edit_status').value = item.status;
+    document.getElementById('edit_acquisition_date').value = item.acquisition_date || '';
     document.getElementById('edit_last_maintenance').value = item.last_maintenance || '';
     document.getElementById('edit_next_maintenance').value = item.next_maintenance || '';
     document.getElementById('editEquipmentModal').showModal();

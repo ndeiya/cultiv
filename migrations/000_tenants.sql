@@ -10,4 +10,4 @@ CREATE TABLE IF NOT EXISTS tenants (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert default tenant for existing data
-INSERT INTO tenants (id, name, status) VALUES (1, 'Default Farm Organization', 'active');
+INSERT IGNORE INTO tenants (id, name, status) VALUES (1, 'Default Farm Organization', 'active');

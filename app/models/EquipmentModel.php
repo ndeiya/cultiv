@@ -45,16 +45,18 @@ class EquipmentModel extends BaseModel
     {
         $tenantId = $this->getCurrentTenantId();
         $stmt = $this->db->prepare('
-            INSERT INTO equipment (tenant_id, farm_id, name, status, last_maintenance, next_maintenance)
-            VALUES (:tenant_id, :farm_id, :name, :status, :last_maintenance, :next_maintenance)
+            INSERT INTO equipment (tenant_id, farm_id, name, status, acquisition_date, last_maintenance, next_maintenance, approval_status)
+            VALUES (:tenant_id, :farm_id, :name, :status, :acquisition_date, :last_maintenance, :next_maintenance, :approval_status)
         ');
         $stmt->execute([
             'tenant_id'       => $tenantId,
             'farm_id'         => $data['farm_id'],
             'name'            => $data['name'],
             'status'          => $data['status'] ?? 'working',
+            'acquisition_date'=> $data['acquisition_date'] ?? null,
             'last_maintenance'=> $data['last_maintenance'] ?? null,
-            'next_maintenance'=> $data['next_maintenance'] ?? null
+            'next_maintenance'=> $data['next_maintenance'] ?? null,
+            'approval_status' => $data['approval_status'] ?? 'approved'
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -66,7 +68,7 @@ class EquipmentModel extends BaseModel
     {
         $stmt = $this->scopedQuery('
             UPDATE equipment 
-            SET name = :name, status = :status, 
+            SET name = :name, status = :status, acquisition_date = :acquisition_date,
                 last_maintenance = :last_maintenance, next_maintenance = :next_maintenance
             WHERE id = :id AND farm_id = :farm_id AND tenant_id = :tenant_id
         ', [
@@ -74,6 +76,7 @@ class EquipmentModel extends BaseModel
             'farm_id'         => $farmId,
             'name'            => $data['name'],
             'status'          => $data['status'],
+            'acquisition_date'=> $data['acquisition_date'] ?? null,
             'last_maintenance'=> $data['last_maintenance'] ?? null,
             'next_maintenance'=> $data['next_maintenance'] ?? null
         ]);

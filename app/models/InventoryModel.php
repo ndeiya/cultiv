@@ -57,8 +57,8 @@ class InventoryModel extends BaseModel
     {
         $tenantId = $this->getCurrentTenantId();
         $stmt = $this->db->prepare('
-            INSERT INTO inventory (tenant_id, farm_id, item_name, quantity, unit, storage_location, updated_at)
-            VALUES (:tenant_id, :farm_id, :item_name, :quantity, :unit, :storage_location, NOW())
+            INSERT INTO inventory (tenant_id, farm_id, item_name, quantity, unit, storage_location, approval_status, updated_at)
+            VALUES (:tenant_id, :farm_id, :item_name, :quantity, :unit, :storage_location, :approval_status, NOW())
         ');
         $stmt->execute([
             'tenant_id'        => $tenantId,
@@ -66,7 +66,8 @@ class InventoryModel extends BaseModel
             'item_name'        => $data['item_name'],
             'quantity'         => $data['quantity'] ?? 0,
             'unit'             => $data['unit'],
-            'storage_location' => $data['storage_location'] ?? null
+            'storage_location' => $data['storage_location'] ?? null,
+            'approval_status'  => $data['approval_status'] ?? 'approved'
         ]);
         return (int) $this->db->lastInsertId();
     }

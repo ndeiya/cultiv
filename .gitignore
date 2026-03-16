@@ -30,3 +30,6 @@ Thumbs.db
 *.bak
 *.tmp
 *.temp
+temp/
+tmp/
+tests/ 

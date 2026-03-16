@@ -42,6 +42,10 @@ $navItems = match($role) {
     default => [ // worker
         ['id' => 'dashboard', 'icon' => 'dashboard',   'label' => 'Dashboard', 'url' => '/worker/dashboard'],
         ['id' => 'reports',   'icon' => 'description', 'label' => 'Reports',   'url' => '/worker/reports'],
+        ['id' => 'crops',     'icon' => 'grass',       'label' => 'Crops',      'url' => '/worker/crops'],
+        ['id' => 'animals',   'icon' => 'pets',        'label' => 'Animals',    'url' => '/worker/animals'],
+        ['id' => 'equipment', 'icon' => 'build',       'label' => 'Equipment',  'url' => '/worker/equipment'],
+        ['id' => 'inventory', 'icon' => 'inventory_2', 'label' => 'Inventory',  'url' => '/worker/inventory'],
         ['id' => 'history',   'icon' => 'history',     'label' => 'History',   'url' => '/worker/history'],
         ['id' => 'payslips',  'icon' => 'receipt',     'label' => 'Payslips',  'url' => '/worker/payslips'],
         ['id' => 'profile',   'icon' => 'person',      'label' => 'Profile',   'url' => '/worker/profile'],

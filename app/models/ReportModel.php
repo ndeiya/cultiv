@@ -36,7 +36,7 @@ class ReportModel extends BaseModel
                 'related_id' => $data['related_id'] ?? null,
                 'description' => $data['description'],
                 'severity' => $data['severity'] ?? 'low',
-                'status' => 'open'
+                'status' => $data['status'] ?? 'open'
             ]);
 
             $reportId = (int) $this->db->lastInsertId();

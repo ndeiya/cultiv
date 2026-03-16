@@ -51,6 +51,7 @@ class ReportController
             'related_id'   => !empty($_POST['related_id']) ? (int) $_POST['related_id'] : null,
             'description'  => $_POST['description'] ?? '',
             'severity'     => $_POST['severity'] ?? 'low',
+            'status'       => ($user['role'] === 'worker') ? 'pending' : 'open',
         ];
 
         // Basic validation

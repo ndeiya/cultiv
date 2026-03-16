@@ -32,6 +32,7 @@ $router->get('/worker/payslips', 'PayrollController', 'workerPayslips');
 $router->get('/worker/leave/request', 'LeaveController', 'create');
 $router->post('/worker/leave/request', 'LeaveController', 'store');
 $router->get('/worker/leave/history', 'LeaveController', 'history');
+$router->get('/worker/history', 'AttendanceController', 'workerHistory');
 
 // ── Supervisor Routes ─────────────────────────────────
 $router->get('/supervisor/dashboard', 'DashboardController', 'supervisorDashboard');
@@ -43,6 +44,7 @@ $router->get('/supervisor/production/create', 'ProductionController', 'create');
 $router->post('/supervisor/production', 'ProductionController', 'store');
 $router->get('/supervisor/reports', 'ReportController', 'index');
 $router->post('/supervisor/reports/resolve', 'ReportController', 'resolve');
+$router->get('/supervisor/tasks', 'TaskController', 'index');
 
 // ── Owner Routes ──────────────────────────────────────
 $router->get('/owner/dashboard', 'DashboardController', 'ownerDashboard');
@@ -50,6 +52,7 @@ $router->get('/owner/attendance', 'AttendanceController', 'ownerManagement');
 $router->get('/owner/roster', 'ShiftController', 'roster');
 $router->get('/owner/reports', 'ReportController', 'index');
 $router->post('/owner/reports/resolve', 'ReportController', 'resolve');
+$router->get('/owner/tasks', 'TaskController', 'index');
 $router->get('/owner/workers', 'UserController', 'index');
 $router->get('/owner/workers/create', 'UserController', 'create');
 $router->post('/owner/workers', 'UserController', 'store');
@@ -58,6 +61,14 @@ $router->post('/owner/workers/update', 'UserController', 'update');
 $router->post('/owner/workers/toggle-status', 'UserController', 'toggleStatus');
 $router->get('/owner/leave/approvals', 'LeaveController', 'approvals');
 $router->post('/owner/leave/update-status', 'LeaveController', 'updateStatus');
+$router->get('/owner/approvals', 'ApprovalController', 'index');
+$router->post('/owner/approvals/approve', 'ApprovalController', 'approve');
+$router->post('/owner/approvals/reject', 'ApprovalController', 'reject');
+
+// ── Supervisor Approval Routes ─────────────────────────
+$router->get('/supervisor/approvals', 'ApprovalController', 'index');
+$router->post('/supervisor/approvals/approve', 'ApprovalController', 'approve');
+$router->post('/supervisor/approvals/reject', 'ApprovalController', 'reject');
 
 // ── Owner Expense Routes ──────────────────────────────
 $router->get('/owner/expenses', 'ExpenseController', 'index');
@@ -87,7 +98,7 @@ $router->post('/accountant/payroll/pay', 'PayrollController', 'payRecord');
 
 // ── Farm Operations (Phase 5) ─────────────────────────
 // Support both prefixed and non-prefixed for flexibility
-foreach (['/owner', '/supervisor', ''] as $prefix) {
+foreach (['/owner', '/supervisor', '/worker', ''] as $prefix) {
     $router->get($prefix . '/crops', 'CropController', 'index');
     $router->post($prefix . '/crops', 'CropController', 'store');
     $router->post($prefix . '/crops/update', 'CropController', 'update');

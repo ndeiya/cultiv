@@ -52,6 +52,11 @@ class DashboardService
         $stmt->execute([$farmId]);
         $openReports = $stmt->fetchColumn() ?: 0;
 
+        // 5. Total Tasks Pending
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM tasks WHERE farm_id = ? AND status NOT IN ('completed', 'cancelled')");
+        $stmt->execute([$farmId]);
+        $pendingTasks = $stmt->fetchColumn() ?: 0;
+
         // --- Chart Data ---
 
         // A. Hours Trend (last 7 days)
@@ -134,7 +139,8 @@ class DashboardService
             'chartDataHours' => $chartDataHours,
             'chartDataReports' => $chartDataReports,
             'expenseBreakdown' => $expenseBreakdown,
-            'totalExpensesMonth' => $totalExpensesMonth
+            'totalExpensesMonth' => $totalExpensesMonth,
+            'pendingTasks' => $pendingTasks
         ];
     }
 
@@ -170,6 +176,11 @@ class DashboardService
         $stmt->execute([$farmId]);
         $equipmentIssues = $stmt->fetchColumn() ?: 0;
 
+        // 5. Pending Tasks count
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM tasks WHERE farm_id = ? AND status NOT IN ('completed', 'cancelled')");
+        $stmt->execute([$farmId]);
+        $pendingTasks = $stmt->fetchColumn() ?: 0;
+
         // 5. Team Attendance (Today)
         $stmt = $this->db->prepare("
             SELECT u.name, a.status, a.clock_in, a.total_minutes 
@@ -181,13 +192,26 @@ class DashboardService
         $stmt->execute([$farmId]);
         $teamAttendance = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // 7. Recent Tasks (Activity Feed)
+        $stmt = $this->db->prepare("
+            SELECT t.*, u.name as assigned_to_name 
+            FROM tasks t 
+            JOIN users u ON t.assigned_to = u.id 
+            WHERE t.farm_id = ? 
+            ORDER BY t.created_at DESC LIMIT 5
+        ");
+        $stmt->execute([$farmId]);
+        $recentTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         return [
             'workersPresent' => $workersPresent,
             'totalWorkers' => $totalWorkers,
             'openReports' => $openReports,
             'cropAlerts' => $cropAlerts,
             'equipmentIssues' => $equipmentIssues,
-            'teamAttendance' => $teamAttendance
+            'teamAttendance' => $teamAttendance,
+            'pendingTasks' => $pendingTasks,
+            'recentTasks' => $recentTasks
         ];
     }
 
@@ -211,8 +235,20 @@ class DashboardService
         $stmt->execute([$userId]);
         $recentPayslip = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // Get active tasks
+        $stmt = $this->db->prepare("
+            SELECT t.*, creator.name as created_by_name 
+            FROM tasks t
+            LEFT JOIN users creator ON t.created_by = creator.id
+            WHERE t.assigned_to = ? AND t.status NOT IN ('completed', 'cancelled')
+            ORDER BY t.priority DESC, t.due_date ASC
+        ");
+        $stmt->execute([$userId]);
+        $activeTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         return [
-            'recentPayslip' => $recentPayslip
+            'recentPayslip' => $recentPayslip,
+            'activeTasks' => $activeTasks
         ];
     }
 

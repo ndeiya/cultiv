@@ -34,25 +34,30 @@ class EquipmentController
      */
     public function store(): void
     {
-        role_gate(['owner', 'supervisor']);
+        role_gate(['owner', 'supervisor', 'worker']);
         require_csrf();
-
+ 
         $user = current_user();
         $data = sanitize_array($_POST);
-
+ 
         $missing = validate_required(['name', 'status'], $data);
         if ($missing) {
             flash('error', 'Please fill in all required fields.');
             redirect('/' . $user['role'] . '/equipment');
             return;
         }
-
+ 
         $data['farm_id'] = $user['farm_id'];
-
+        $data['approval_status'] = ($user['role'] === 'worker') ? 'pending' : 'approved';
+ 
         $id = $this->equipmentModel->create($data);
         AuditService::logAction('create', 'equipment', $id);
-
-        flash('success', 'Equipment added successfully.');
+ 
+        if ($user['role'] === 'worker') {
+            flash('success', 'Entry sent for approval.');
+        } else {
+            flash('success', 'Equipment added successfully.');
+        }
         redirect('/' . $user['role'] . '/equipment');
     }
 

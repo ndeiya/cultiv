@@ -14,10 +14,10 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
             <h2 class="text-2xl font-bold">Crops & Fields</h2>
             <p class="text-sm text-slate-500">Track planting, growth stages, and field health.</p>
         </div>
-        <?php if (in_array($user['role'], ['owner', 'supervisor'])): ?>
+        <?php if (in_array($user['role'], ['owner', 'supervisor', 'worker'])): ?>
         <button onclick="document.getElementById('addCropModal').showModal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-slate-900 font-bold rounded-lg hover:brightness-95 transition-all w-fit">
             <span class="material-symbols-outlined text-sm">add_circle</span>
-            Add New Crop
+            <?= $user['role'] === 'worker' ? 'Submit New Crop' : 'Add New Crop' ?>
         </button>
         <?php endif; ?>
     </div>
@@ -98,17 +98,17 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <?php
-                                    $badge = match($crop['health_status']) {
-                                        'good'    => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                        'warning' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-                                        'bad'     => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-                                        default   => 'bg-slate-100 text-slate-600'
-                                    };
-                                    ?>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase <?= $badge ?>">
-                                        <?= htmlspecialchars($crop['health_status']) ?>
-                                    </span>
+                                    <?php if (($crop['approval_status'] ?? 'approved') === 'pending'): ?>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center gap-1 w-fit">
+                                            <span class="material-symbols-outlined text-[10px]">schedule</span> Pending
+                                        </span>
+                                    <?php elseif (($crop['approval_status'] ?? 'approved') === 'rejected'): ?>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Rejected</span>
+                                    <?php else: ?>
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase <?= $badge ?>">
+                                            <?= htmlspecialchars($crop['health_status']) ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 font-bold text-sm">
                                     GHS <?= number_format($crop['total_cost'] ?? 0, 2) ?>
@@ -129,6 +129,8 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                                 <span class="material-symbols-outlined text-lg">delete</span>
                                             </button>
                                         </form>
+                                        <?php elseif ($user['role'] === 'worker' && ($crop['approval_status'] ?? 'approved') === 'pending'): ?>
+                                            <span class="text-[10px] text-slate-400 italic">Awaiting Approval</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -193,6 +195,12 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                         <option value="bad">Bad / Critical</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Quantity to Add</label>
+                <input type="number" name="quantity" value="1" min="1" max="100" class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary p-3">
+                <p class="text-[10px] text-slate-400">Specify how many identical records to create.</p>
             </div>
 
             <button type="submit" class="w-full py-3 bg-primary text-slate-900 font-bold rounded-xl hover:brightness-95 transition-all mt-6 shadow-lg shadow-primary/20">

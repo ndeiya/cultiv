@@ -28,9 +28,9 @@ class UserModel extends BaseModel
     /**
      * Find a user by ID (scoped to current tenant).
      */
-    public function findById(int $id): ?array
+    public function findById(int $id, ?int $farmId = null): ?array
     {
-        return parent::findById($id);
+        return parent::findById($id, $farmId);
     }
 
     /**
