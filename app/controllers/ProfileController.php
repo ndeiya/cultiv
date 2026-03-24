@@ -161,15 +161,21 @@ class ProfileController
         $db = Database::getInstance();
 
         // Fetch recent audit logs for the user's farm (last 50 entries)
+        // Filter by importance and target role
         $stmt = $db->prepare('
             SELECT al.*, u.name as user_name, u.role as user_role
             FROM audit_logs al
             LEFT JOIN users u ON al.user_id = u.id
-            WHERE u.farm_id = :farm_id
+            WHERE u.farm_id = :farm_id 
+              AND al.is_important = 1
+              AND (al.target_roles IS NULL OR FIND_IN_SET(:role, al.target_roles))
             ORDER BY al.created_at DESC
             LIMIT 50
         ');
-        $stmt->execute(['farm_id' => $user['farm_id']]);
+        $stmt->execute([
+            'farm_id' => $user['farm_id'],
+            'role' => $user['role']
+        ]);
         $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         view('shared/notifications', [

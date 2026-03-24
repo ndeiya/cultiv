@@ -131,6 +131,37 @@ class InventoryController
     }
 
     /**
+     * Web: Bulk Delete inventory items
+     */
+    public function bulkDelete(): void
+    {
+        role_gate(['owner', 'supervisor']);
+        require_csrf();
+
+        $user = current_user();
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $ids = $input['ids'] ?? [];
+
+        if (empty($ids)) {
+            json_response(['success' => false, 'message' => 'No items selected.'], 400);
+            return;
+        }
+
+        $successCount = 0;
+        foreach ($ids as $id) {
+            if ($this->inventoryModel->delete((int)$id, $user['farm_id'])) {
+                $successCount++;
+                AuditService::logAction('delete', 'inventory', $id);
+            }
+        }
+
+        json_response([
+            'success' => true, 
+            'message' => "Successfully deleted {$successCount} inventory items."
+        ]);
+    }
+
+    /**
      * API: List inventory
      */
     public function apiIndex(): void

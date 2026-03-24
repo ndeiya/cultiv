@@ -79,8 +79,8 @@ class NotificationService {
             }
         }
 
-        if (empty($phoneNumberId) || empty($accessToken) || $phoneNumberId === 'YOUR_PHONE_NUMBER_ID') {
-            error_log("WhatsApp API credentials not configured for Farm ID: $farmId");
+        if (empty($phoneNumberId) || empty($accessToken) || $phoneNumberId === 'YOUR_PHONE_NUMBER_ID' || $accessToken === 'YOUR_ACCESS_TOKEN') {
+            // Silently return if not configured - WhatsApp is optional
             return false;
         }
 
@@ -104,6 +104,8 @@ class NotificationService {
             'Authorization: Bearer ' . $accessToken,
             'Content-Type: application/json'
         ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5); // 5 second total timeout
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2); // 2 second connect timeout
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

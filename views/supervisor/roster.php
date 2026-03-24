@@ -14,9 +14,17 @@ include VIEWS_PATH . '/layouts/app_header.php';
             Shift Roster
         </h1>
         <div class="flex items-center gap-3">
+            <a href="/supervisor/shifts/templates" class="px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">settings</span>
+                Templates
+            </a>
+            <a href="/supervisor/shifts/schedule" class="px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">calendar_add_on</span>
+                Schedule
+            </a>
             <input type="date" id="roster-date" value="<?= e($current_date) ?>" class="px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm">
-            <button onclick="loadRoster()" class="px-4 py-2 bg-primary text-slate-900 font-bold rounded-lg hover:bg-primary/90 transition">
-                Load Roster
+            <button onclick="loadRoster()" class="px-4 py-2 bg-primary text-slate-900 font-black rounded-lg hover:bg-primary/90 transition shadow-sm">
+                Load
             </button>
         </div>
     </div>

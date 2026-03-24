@@ -207,7 +207,21 @@ class ReportModel extends BaseModel
         foreach ($reports as &$report) {
             $report['photos'] = $photosByReport[$report['id']] ?? [];
         }
-        
         return $reports;
+    }
+
+    /**
+     * Get all pending reports for a specific farm.
+     */
+    public function getPendingByFarm(int $farmId): array
+    {
+        $stmt = $this->scopedQuery('
+            SELECT r.*, u.name as reporter_name 
+            FROM reports r 
+            JOIN users u ON r.user_id = u.id 
+            WHERE r.farm_id = :farm_id AND r.tenant_id = :tenant_id AND r.status = \'pending\'
+            ORDER BY r.created_at DESC
+        ', ['farm_id' => $farmId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

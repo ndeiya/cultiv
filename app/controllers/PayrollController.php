@@ -110,7 +110,7 @@ class PayrollController
         
         try {
             $results = $this->payrollService->generatePayroll($periodId);
-            AuditService::logAction('generate_payroll', 'payroll_periods', $periodId);
+            AuditService::logAction('generate_payroll', 'payroll_periods', $periodId, true, ['owner', 'accountant']);
             $_SESSION['success'] = "Payroll generated for {$results['processed']} workers.";
             if (!empty($results['errors'])) {
                 $_SESSION['warning'] = "Failed for " . count($results['errors']) . " workers.";
@@ -301,7 +301,7 @@ class PayrollController
         }
 
         if ($this->payrollModel->createPayment($data)) {
-            AuditService::logAction('record_payment', 'payments', $data['payroll_record_id']);
+            AuditService::logAction('record_payment', 'payments', $data['payroll_record_id'], true, ['owner', 'accountant', 'worker']);
             $_SESSION['success'] = "Payment recorded successfully.";
         } else {
             $_SESSION['error'] = "Failed to record payment.";

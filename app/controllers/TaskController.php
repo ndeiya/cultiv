@@ -91,7 +91,7 @@ class TaskController extends BaseController {
             'created_by' => $user['id']
         ]);
 
-        AuditService::logAction('create', 'task', $taskId);
+        AuditService::logAction('create', 'task', $taskId, true, ['supervisor', 'owner', 'worker']);
         
         json_response([
             'success' => true,
@@ -131,7 +131,8 @@ class TaskController extends BaseController {
 
         $success = $this->taskModel->updateStatus($taskId, $status);
         if ($success) {
-            AuditService::logAction('update_status', 'task', $taskId, ['status' => $status]);
+            $isImportant = ($status === 'completed');
+            AuditService::logAction('update_status', 'task', $taskId, $isImportant, ['supervisor', 'owner', 'worker']);
             json_response(['success' => true, 'message' => 'Task status updated']);
         } else {
             json_response(['error' => true, 'message' => 'Failed to update task status'], 500);

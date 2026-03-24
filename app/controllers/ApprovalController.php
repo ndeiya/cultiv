@@ -4,18 +4,19 @@
  * Handles owner/supervisor approval of worker submissions.
  */
 
-class ApprovalController extends BaseController {
+class ApprovalController {
 
     public function __construct() {
-        parent::__construct();
-        $this->role_gate(['owner', 'supervisor']);
+        // No parent constructor call needed if not extending BaseController
     }
 
     /**
      * Show pending submissions from crops, animals, equipment, and inventory.
      */
     public function index() {
-        $farmId = $_SESSION['farm_id'];
+        role_gate(['owner', 'supervisor']);
+        $user = current_user();
+        $farmId = $user['farm_id'];
         
         // Fetch pending items from different tables
         $cropModel = new CropModel();
@@ -29,28 +30,28 @@ class ApprovalController extends BaseController {
             'animals' => $animalModel->getPendingByFarm($farmId),
             'equipment' => $equipmentModel->getPendingByFarm($farmId),
             'inventory' => $inventoryModel->getPendingByFarm($farmId),
-            'reports' => $reportModel->scopedQuery("SELECT r.*, u.name as reporter_name 
-                                                   FROM reports r 
-                                                   JOIN users u ON r.user_id = u.id 
-                                                   WHERE r.status = 'pending' AND r.farm_id = ?", [$farmId])
+            'reports' => $reportModel->getPendingByFarm($farmId),
+            'role' => current_user()['role']
         ];
 
-        $this->view('owner/approvals', $data);
+        view('owner/approvals', $data);
     }
 
     /**
      * Approve a pending submission.
      */
     public function approve() {
-        $this->require_csrf();
-        $data = $this->get_json_input();
+        role_gate(['owner', 'supervisor']);
+        require_csrf();
+        $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
         
         $type = $data['type'] ?? '';
         $id = $data['id'] ?? 0;
-        $farmId = $_SESSION['farm_id'];
+        $user = current_user();
+        $farmId = $user['farm_id'];
 
         if (!$type || !$id) {
-            $this->json_error('Invalid request parameters.');
+            return json_response(['success' => false, 'message' => 'Invalid request parameters.'], 400);
         }
 
         $tableToModel = [
@@ -65,7 +66,7 @@ class ApprovalController extends BaseController {
             $success = $model->updateStatus($id, $farmId, 'open');
         } else {
             if (!isset($tableToModel[$type])) {
-                $this->json_error('Invalid item type.');
+                return json_response(['success' => false, 'message' => 'Invalid item type.'], 400);
             }
             $modelClass = $tableToModel[$type];
             $model = new $modelClass();
@@ -73,9 +74,10 @@ class ApprovalController extends BaseController {
         }
 
         if ($success) {
-            $this->json_success(['message' => ucfirst($type) . ' approved successfully.']);
+            AuditService::logAction('approve', $type, $id);
+            return json_response(['success' => true, 'message' => ucfirst($type) . ' approved successfully.']);
         } else {
-            $this->json_error('Failed to approve item.');
+            return json_response(['success' => false, 'message' => 'Failed to approve item.'], 500);
         }
     }
 
@@ -83,15 +85,17 @@ class ApprovalController extends BaseController {
      * Reject a pending submission.
      */
     public function reject() {
-        $this->require_csrf();
-        $data = $this->get_json_input();
+        role_gate(['owner', 'supervisor']);
+        require_csrf();
+        $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
         
         $type = $data['type'] ?? '';
         $id = $data['id'] ?? 0;
-        $farmId = $_SESSION['farm_id'];
+        $user = current_user();
+        $farmId = $user['farm_id'];
 
         if (!$type || !$id) {
-            $this->json_error('Invalid request parameters.');
+            return json_response(['success' => false, 'message' => 'Invalid request parameters.'], 400);
         }
 
         $tableToModel = [
@@ -106,7 +110,7 @@ class ApprovalController extends BaseController {
             $success = $model->updateStatus($id, $farmId, 'rejected');
         } else {
             if (!isset($tableToModel[$type])) {
-                $this->json_error('Invalid item type.');
+                return json_response(['success' => false, 'message' => 'Invalid item type.'], 400);
             }
             $modelClass = $tableToModel[$type];
             $model = new $modelClass();
@@ -114,9 +118,108 @@ class ApprovalController extends BaseController {
         }
 
         if ($success) {
-            $this->json_success(['message' => ucfirst($type) . ' rejected.']);
+            AuditService::logAction('reject', $type, $id);
+            return json_response(['success' => true, 'message' => ucfirst($type) . ' rejected.']);
         } else {
-            $this->json_error('Failed to reject item.');
+            return json_response(['success' => false, 'message' => 'Failed to reject item.'], 500);
         }
+    }
+
+    /**
+     * Bulk Approve
+     */
+    public function bulkApprove() {
+        role_gate(['owner', 'supervisor']);
+        require_csrf();
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $items = $input['items'] ?? [];
+
+        if (empty($items)) {
+            return json_response(['success' => false, 'message' => 'No items selected.'], 400);
+        }
+
+        $tableToModel = [
+            'crop' => 'CropModel',
+            'animal' => 'AnimalModel',
+            'equipment' => 'EquipmentModel',
+            'inventory' => 'InventoryModel'
+        ];
+
+        $user = current_user();
+        $farmId = $user['farm_id'];
+        $successCount = 0;
+        foreach ($items as $item) {
+            $type = $item['type'];
+            $id = $item['id'];
+
+            if ($type === 'report') {
+                $model = new ReportModel();
+                if ($model->updateStatus($id, $farmId, 'open')) {
+                    $successCount++;
+                    AuditService::logAction('approve', 'report', $id);
+                }
+            } elseif (isset($tableToModel[$type])) {
+                $modelClass = $tableToModel[$type];
+                $model = new $modelClass();
+                if ($model->updateApprovalStatus($id, $farmId, 'approved')) {
+                    $successCount++;
+                    AuditService::logAction('approve', $type, $id);
+                }
+            }
+        }
+
+        return json_response([
+            'success' => true, 
+            'message' => "Successfully approved {$successCount} items."
+        ]);
+    }
+
+    /**
+     * Bulk Reject
+     */
+    public function bulkReject() {
+        role_gate(['owner', 'supervisor']);
+        require_csrf();
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $items = $input['items'] ?? [];
+
+        if (empty($items)) {
+            return json_response(['success' => false, 'message' => 'No items selected.'], 400);
+        }
+
+        $tableToModel = [
+            'crop' => 'CropModel',
+            'animal' => 'AnimalModel',
+            'equipment' => 'EquipmentModel',
+            'inventory' => 'InventoryModel'
+        ];
+
+        $user = current_user();
+        $farmId = $user['farm_id'];
+        $successCount = 0;
+        foreach ($items as $item) {
+            $type = $item['type'];
+            $id = $item['id'];
+
+            if ($type === 'report') {
+                $model = new ReportModel();
+                if ($model->updateStatus($id, $farmId, 'rejected')) {
+                    $successCount++;
+                    AuditService::logAction('reject', 'report', $id);
+                }
+            } elseif (isset($tableToModel[$type])) {
+                $modelClass = $tableToModel[$type];
+                $model = new $modelClass();
+                if ($model->updateApprovalStatus($id, $farmId, 'rejected')) {
+                    $successCount++;
+                    AuditService::logAction('reject', $type, $id);
+                }
+            }
+        }
+
+        return json_response([
+            'success' => true, 
+            'message' => "Successfully rejected {$successCount} items."
+        ]);
     }
 }

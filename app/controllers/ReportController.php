@@ -63,13 +63,13 @@ class ReportController
 
         // API or form handler
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest' || strpos($_SERVER['REQUEST_URI'], '/api/') !== false) {
-            if ($result['success']) AuditService::logAction('create', 'report', $result['report_id'] ?? null);
+            if ($result['success']) AuditService::logAction('create', 'report', $result['report_id'] ?? null, true, ['owner', 'supervisor']);
             return json_response($result);
         }
 
         // Web fallback
         if ($result['success']) {
-            AuditService::logAction('create', 'report', $result['report_id'] ?? null);
+            AuditService::logAction('create', 'report', $result['report_id'] ?? null, true, ['owner', 'supervisor']);
             $_SESSION['flash_success'] = 'Report submitted successfully.';
             redirect('/worker/reports');
         } else {
@@ -163,7 +163,7 @@ class ReportController
         $success = $this->reportModel->updateStatus($reportId, $user['farm_id'], $status);
 
         if ($success) {
-            AuditService::logAction('resolve', 'report', $reportId);
+            AuditService::logAction('resolve', 'report', $reportId, true, ['owner', 'supervisor', 'worker']);
             return json_response(['success' => true, 'message' => 'Report status updated successfully.']);
         }
 

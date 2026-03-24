@@ -48,12 +48,14 @@ include VIEWS_PATH . '/layouts/app_header.php';
         </div>
     </div>
 
-    <!-- Recent Transactions Table -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm p-4">
-        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary">receipt_long</span>
-            Recent Transactions
-        </h3>
+    <div class="grid md:grid-cols-3 gap-6">
+        <div class="md:col-span-2">
+            <!-- Recent Transactions Table -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm p-4 h-full">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">receipt_long</span>
+                    Recent Transactions
+                </h3>
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
@@ -89,11 +91,16 @@ include VIEWS_PATH . '/layouts/app_header.php';
                 </tbody>
             </table>
         </div>
-        <?php if (!empty($stats['recentTransactions'])): ?>
-        <div class="mt-4 text-center">
-            <a href="/accountant/payroll/records" class="text-sm font-bold text-primary hover:underline">View All Records</a>
+            </div>
         </div>
-        <?php endif; ?>
+
+        <div>
+            <!-- Recent Activity -->
+            <?php 
+                $activities = $stats['recentActivity'] ?? [];
+                include VIEWS_PATH . '/shared/widgets/recent_activity.php'; 
+            ?>
+        </div>
     </div>
 </div>
 

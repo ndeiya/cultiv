@@ -59,13 +59,15 @@ class AttendanceService {
         // Validate geofence
         $geofenceResult = GeofenceHelper::validateFarmGeofence($lat, $lng, $farm);
         if (!$geofenceResult['valid']) {
-            // Notify supervisor of geofence violation
-            $supervisor = $this->userModel->getSupervisorForFarm($farmId); // Assuming this exists or using a generic approach
-            if ($supervisor) {
-                $this->notificationService->send($supervisor['id'], 'geofence_alert', [
-                    'worker_name' => $user['name'],
-                    'farm_name' => $farm['name']
-                ]);
+            // Notify supervisor of geofence violation ONLY if farm is configured
+            if (!empty($farm['latitude']) && !empty($farm['longitude'])) {
+                $supervisor = $this->userModel->getSupervisorForFarm($farmId);
+                if ($supervisor) {
+                    $this->notificationService->send($supervisor['id'], 'geofence_alert', [
+                        'worker_name' => $user['name'],
+                        'farm_name' => $farm['name']
+                    ]);
+                }
             }
             throw new Exception($geofenceResult['message']);
         }

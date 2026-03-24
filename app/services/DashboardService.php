@@ -300,4 +300,73 @@ class DashboardService
             'recentTransactions' => $recentTransactions
         ];
     }
+
+    /**
+     * Get a summary of pending items across all modules for the dashboard.
+     */
+    public function getPendingSummary(int $farmId, int $limit = 5): array
+    {
+        $pending = [];
+
+        // Crops
+        $stmt = $this->db->prepare("SELECT id, name as title, 'crop' as type, created_at FROM crops WHERE farm_id = ? AND approval_status = 'pending' ORDER BY created_at DESC LIMIT ?");
+        $stmt->execute([$farmId, $limit]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) $pending[] = $row;
+
+        // Animals
+        $stmt = $this->db->prepare("SELECT id, tag_number as title, 'animal' as type, created_at FROM animals WHERE farm_id = ? AND approval_status = 'pending' ORDER BY created_at DESC LIMIT ?");
+        $stmt->execute([$farmId, $limit]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) $pending[] = $row;
+
+        // Inventory
+        $stmt = $this->db->prepare("SELECT id, item_name as title, 'inventory' as type, created_at FROM inventory WHERE farm_id = ? AND approval_status = 'pending' ORDER BY created_at DESC LIMIT ?");
+        $stmt->execute([$farmId, $limit]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) $pending[] = $row;
+
+        // Equipment
+        $stmt = $this->db->prepare("SELECT id, name as title, 'equipment' as type, created_at FROM equipment WHERE farm_id = ? AND approval_status = 'pending' ORDER BY created_at DESC LIMIT ?");
+        $stmt->execute([$farmId, $limit]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) $pending[] = $row;
+
+        // Reports
+        $stmt = $this->db->prepare("SELECT r.id, CONCAT(u.name, ' - ', r.category) as title, 'report' as type, r.created_at 
+                                   FROM reports r 
+                                   JOIN users u ON r.user_id = u.id 
+                                   WHERE r.farm_id = ? AND r.status = 'pending' 
+                                   ORDER BY r.created_at DESC LIMIT ?");
+        $stmt->execute([$farmId, $limit]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) $pending[] = $row;
+
+        // Sort all by created_at DESC
+        usort($pending, function($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
+
+        return array_slice($pending, 0, $limit);
+    }
+
+    /**
+     * Get recent important activities filtered by role.
+     */
+    public function getRecentActivity(int $farmId, string $role, int $limit = 10): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT al.*, u.name as user_name, u.role as user_role
+            FROM audit_logs al
+            LEFT JOIN users u ON al.user_id = u.id
+            WHERE u.farm_id = :farm_id 
+              AND al.is_important = 1
+              AND (al.target_roles IS NULL OR FIND_IN_SET(:role, al.target_roles))
+            ORDER BY al.created_at DESC
+            LIMIT :limit
+        ');
+        
+        // PDO doesn't always handle LIMIT with execute array well if not explicitly bound
+        $stmt->bindValue(':farm_id', $farmId, PDO::PARAM_INT);
+        $stmt->bindValue(':role', $role, PDO::PARAM_STR);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

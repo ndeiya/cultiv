@@ -66,6 +66,9 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
             <table class="w-full text-left">
                 <thead class="bg-slate-50 dark:bg-slate-900/50 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                     <tr>
+                        <th class="px-6 py-4">
+                            <input type="checkbox" id="selectAll" class="rounded border-slate-300 text-primary focus:ring-primary">
+                        </th>
                         <th class="px-6 py-4">Tag #</th>
                         <th class="px-6 py-4">Species / Breed</th>
                         <th class="px-6 py-4">Status</th>
@@ -78,14 +81,17 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                     <?php if (empty($animals)): ?>
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="8" class="px-6 py-12 text-center">
                                 <span class="material-symbols-outlined text-4xl text-slate-300 block mb-2">pets</span>
                                 <p class="text-slate-500">No animals registered yet.</p>
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($animals as $animal): ?>
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                <td class="px-6 py-4">
+                                    <input type="checkbox" class="item-checkbox rounded border-slate-300 text-primary focus:ring-primary" value="<?= $animal['id'] ?>">
+                                </td>
                                 <td class="px-6 py-4">
                                     <span class="font-bold text-primary"><?= htmlspecialchars($animal['tag_number']) ?></span>
                                 </td>
@@ -103,6 +109,14 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                                     <?php elseif (($animal['approval_status'] ?? 'approved') === 'rejected'): ?>
                                         <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Rejected</span>
                                     <?php else: ?>
+                                        <?php
+                                        $badge = match($animal['health_status']) {
+                                            'good' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                            'sick' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                                            'injured' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                                            default => 'bg-slate-100 text-slate-600'
+                                        };
+                                        ?>
                                         <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase <?= $badge ?>">
                                             <?= htmlspecialchars($animal['health_status']) ?>
                                         </span>
@@ -164,6 +178,22 @@ require_once VIEWS_PATH . '/layouts/app_header.php';
                     <?php endif; ?>
                 </tbody>
             </table>
+    </div>
+
+    <!-- Bulk Action Bar -->
+    <div id="bulkActionBar" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 z-50 transition-all duration-300 translate-y-[200%] opacity-0 pointer-events-none">
+        <div class="flex items-center gap-2 border-r border-slate-700 pr-6">
+            <span class="bg-primary text-slate-900 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-display" id="selectedCount">0</span>
+            <span class="text-sm font-bold uppercase tracking-wider">Items Selected</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <?php if (in_array($user['role'], ['owner', 'supervisor'])): ?>
+            <button onclick="performBulkDelete()" class="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors">
+                <span class="material-symbols-outlined text-sm">delete</span>
+                Delete Selection
+            </button>
+            <?php endif; ?>
+            <button onclick="location.reload()" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider">Cancel</button>
         </div>
     </div>
 </div>
@@ -308,6 +338,64 @@ function openEditModal(animal) {
     document.getElementById('edit_health_status').value = animal.health_status;
     document.getElementById('edit_vaccination_due').value = animal.vaccination_due || '';
     document.getElementById('editAnimalModal').showModal();
+}
+
+// Bulk Actions Logic
+const selectAll = document.getElementById('selectAll');
+const checkboxes = document.querySelectorAll('.item-checkbox');
+const bulkActionBar = document.getElementById('bulkActionBar');
+const selectedCountElem = document.getElementById('selectedCount');
+
+function updateBulkBar() {
+    const selected = document.querySelectorAll('.item-checkbox:checked');
+    if (selected.length > 0) {
+        selectedCountElem.textContent = selected.length;
+        bulkActionBar.classList.remove('translate-y-[200%]', 'opacity-0', 'pointer-events-none');
+    } else {
+        bulkActionBar.classList.add('translate-y-[200%]', 'opacity-0', 'pointer-events-none');
+    }
+}
+
+if (selectAll) {
+    selectAll.addEventListener('change', () => {
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBulkBar();
+    });
+}
+
+checkboxes.forEach(cb => {
+    cb.addEventListener('change', updateBulkBar);
+});
+
+async function performBulkDelete() {
+    const selected = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+    if (selected.length === 0) return;
+
+    if (!confirm(`Are you sure you want to delete ${selected.length} items?`)) return;
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const role = '<?= $user['role'] ?>';
+    
+    try {
+        const response = await fetch(`/${role}/animals/bulk-delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({ ids: selected })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            window.location.reload();
+        } else {
+            alert(result.message || 'Operation failed.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('A network error occurred.');
+    }
 }
 </script>
 

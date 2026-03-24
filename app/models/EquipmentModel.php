@@ -94,4 +94,28 @@ class EquipmentModel extends BaseModel
         );
         return $stmt->rowCount() > 0;
     }
+
+    /**
+     * Get all pending items for a specific farm.
+     */
+    public function getPendingByFarm(int $farmId): array
+    {
+        $stmt = $this->scopedQuery(
+            'SELECT * FROM equipment WHERE farm_id = :farm_id AND tenant_id = :tenant_id AND approval_status = \'pending\' ORDER BY acquisition_date DESC',
+            ['farm_id' => $farmId]
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Update approval status (scoped to tenant and farm).
+     */
+    public function updateApprovalStatus(int $id, int $farmId, string $status): bool
+    {
+        $stmt = $this->scopedQuery(
+            'UPDATE equipment SET approval_status = :status, updated_at = NOW() WHERE id = :id AND farm_id = :farm_id AND tenant_id = :tenant_id',
+            ['id' => $id, 'farm_id' => $farmId, 'status' => $status]
+        );
+        return $stmt->rowCount() > 0;
+    }
 }

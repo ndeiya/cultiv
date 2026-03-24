@@ -25,7 +25,7 @@ if ($isCheckedIn) {
 $todayShift = $shiftService->getTodayAssignment($user['id']);
 ?>
 
-<div class="space-y-6">
+<div class="space-y-10">
     <!-- Quick Actions -->
     <section>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -150,7 +150,7 @@ $todayShift = $shiftService->getTodayAssignment($user['id']);
     </div>
 
     <!-- Tasks and Field Conditions (Placeholders for future phases) -->
-    <section>
+    <section class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-lg font-bold flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary">assignment</span> Assigned Tasks
@@ -268,7 +268,7 @@ $todayShift = $shiftService->getTodayAssignment($user['id']);
     }
     </script>
 
-    <section>
+    <section class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
         <h2 class="text-lg font-bold mb-3 flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">thermostat</span> Field Conditions
         </h2>

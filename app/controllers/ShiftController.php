@@ -135,4 +135,96 @@ class ShiftController extends BaseController
             'current_date' => $date
         ]);
     }
+
+    /**
+     * View: Manage shift templates
+     */
+    public function templates(): void
+    {
+        require_role(['supervisor', 'owner']);
+        $user = current_user();
+        
+        $shiftModel = new ShiftModel();
+        $templates = $shiftModel->getTemplatesByFarm($user['farm_id']);
+        
+        view('supervisor/shift_templates', [
+            'user' => $user,
+            'page_title' => 'Shift Templates',
+            'templates' => $templates
+        ]);
+    }
+
+    /**
+     * POST: Create shift template (web)
+     */
+    public function storeTemplate(): void
+    {
+        require_role(['supervisor', 'owner']);
+        require_csrf();
+        $user = current_user();
+        
+        $name = sanitize_input($_POST['name'] ?? '');
+        $startTime = $_POST['start_time'] ?? '08:00';
+        $endTime = $_POST['end_time'] ?? '17:00';
+        $daysOfWeek = isset($_POST['days_of_week']) ? implode(',', $_POST['days_of_week']) : '1,2,3,4,5';
+        
+        $this->shiftService->createTemplate([
+            'farm_id' => $user['farm_id'],
+            'name' => $name,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'break_duration_minutes' => (int)($_POST['break_duration'] ?? 0),
+            'is_recurring' => true,
+            'days_of_week' => $daysOfWeek,
+            'is_active' => true
+        ]);
+        
+        $_SESSION['success'] = 'Template created successfully';
+        redirect('/supervisor/shifts/templates');
+    }
+
+    /**
+     * View: Schedule shifts
+     */
+    public function schedule(): void
+    {
+        require_role(['supervisor', 'owner']);
+        $user = current_user();
+        
+        $shiftModel = new ShiftModel();
+        $templates = $shiftModel->getTemplatesByFarm($user['farm_id']);
+        $workers = $this->userModel->getAllByFarm($user['farm_id'], 'worker');
+        
+        view('supervisor/schedule_shifts', [
+            'user' => $user,
+            'page_title' => 'Schedule Shifts',
+            'templates' => $templates,
+            'workers' => $workers
+        ]);
+    }
+
+    /**
+     * POST: Generate assignments from template (web)
+     */
+    public function generate(): void
+    {
+        require_role(['supervisor', 'owner']);
+        require_csrf();
+        
+        $templateId = (int)($_POST['template_id'] ?? 0);
+        $startDate = $_POST['start_date'] ?? date('Y-m-d');
+        $endDate = $_POST['end_date'] ?? $startDate;
+        $userIds = $_POST['user_ids'] ?? [];
+        
+        if (empty($userIds)) {
+            $_SESSION['error'] = 'Please select at least one worker';
+            redirect('/supervisor/shifts/schedule');
+            return;
+        }
+        
+        $created = $this->shiftService->generateFromTemplate($templateId, $startDate, $endDate, $userIds);
+        
+        $_SESSION['success'] = "Successfully scheduled {$created} shifts";
+        redirect('/supervisor/roster?date=' . $startDate);
+    }
 }

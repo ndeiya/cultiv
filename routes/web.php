@@ -12,16 +12,6 @@ $router->get('/logout', 'AuthController', 'logout');
 // Home — redirect to role-specific dashboard
 $router->get('/', 'AuthController', 'home');
 
-// PWA Assets
-$router->get('/manifest.json', function() {
-    header('Content-Type: application/json');
-    readfile(dirname(__DIR__) . '/pwa/manifest.json');
-});
-$router->get('/service-worker.js', function() {
-    header('Content-Type: application/javascript');
-    readfile(dirname(__DIR__) . '/pwa/service-worker.js');
-});
-
 // ── Worker Routes ─────────────────────────────────────
 $router->get('/worker/dashboard', 'DashboardController', 'workerDashboard');
 $router->get('/worker/attendance', 'AttendanceController', 'workerHistory');
@@ -39,6 +29,10 @@ $router->get('/supervisor/dashboard', 'DashboardController', 'supervisorDashboar
 $router->get('/supervisor/attendance', 'AttendanceController', 'supervisorOverview');
 $router->get('/supervisor/attendance/detail', 'AttendanceController', 'supervisorWorkerDetail');
 $router->get('/supervisor/roster', 'ShiftController', 'roster');
+$router->get('/supervisor/shifts/templates', 'ShiftController', 'templates');
+$router->post('/supervisor/shifts/templates', 'ShiftController', 'storeTemplate');
+$router->get('/supervisor/shifts/schedule', 'ShiftController', 'schedule');
+$router->post('/supervisor/shifts/generate', 'ShiftController', 'generate');
 $router->get('/supervisor/production', 'ProductionController', 'index');
 $router->get('/supervisor/production/create', 'ProductionController', 'create');
 $router->post('/supervisor/production', 'ProductionController', 'store');
@@ -64,11 +58,15 @@ $router->post('/owner/leave/update-status', 'LeaveController', 'updateStatus');
 $router->get('/owner/approvals', 'ApprovalController', 'index');
 $router->post('/owner/approvals/approve', 'ApprovalController', 'approve');
 $router->post('/owner/approvals/reject', 'ApprovalController', 'reject');
+$router->post('/owner/approvals/bulk-approve', 'ApprovalController', 'bulkApprove');
+$router->post('/owner/approvals/bulk-reject', 'ApprovalController', 'bulkReject');
 
 // ── Supervisor Approval Routes ─────────────────────────
 $router->get('/supervisor/approvals', 'ApprovalController', 'index');
 $router->post('/supervisor/approvals/approve', 'ApprovalController', 'approve');
 $router->post('/supervisor/approvals/reject', 'ApprovalController', 'reject');
+$router->post('/supervisor/approvals/bulk-approve', 'ApprovalController', 'bulkApprove');
+$router->post('/supervisor/approvals/bulk-reject', 'ApprovalController', 'bulkReject');
 
 // ── Owner Expense Routes ──────────────────────────────
 $router->get('/owner/expenses', 'ExpenseController', 'index');
@@ -119,6 +117,12 @@ foreach (['/owner', '/supervisor', '/worker', ''] as $prefix) {
     $router->post($prefix . '/inventory/update', 'InventoryController', 'update');
     $router->post($prefix . '/inventory/update-quantity', 'InventoryController', 'updateQuantity');
     $router->post($prefix . '/inventory/delete', 'InventoryController', 'delete');
+
+    // Bulk Actions
+    $router->post($prefix . '/crops/bulk-delete', 'CropController', 'bulkDelete');
+    $router->post($prefix . '/animals/bulk-delete', 'AnimalController', 'bulkDelete');
+    $router->post($prefix . '/equipment/bulk-delete', 'EquipmentController', 'bulkDelete');
+    $router->post($prefix . '/inventory/bulk-delete', 'InventoryController', 'bulkDelete');
 }
 
 // ── Profile, Password & Notifications (all roles) ────

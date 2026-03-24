@@ -38,9 +38,51 @@ include VIEWS_PATH . '/layouts/app_header.php';
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Geofence Radius (meters)</label>
-                    <input type="number" name="geofence_radius" value="<?= htmlspecialchars($farm['geofence_radius'] ?? 200) ?>" required 
+                    <input type="number" name="geofence_radius_metres" value="<?= htmlspecialchars($farm['geofence_radius_metres'] ?? 200) ?>" required 
                         class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary px-4 py-2.5">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Latitude</label>
+                    <input type="text" id="latitude" name="latitude" value="<?= htmlspecialchars($farm['latitude'] ?? '') ?>" step="any"
+                        class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary px-4 py-2.5 font-mono text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Longitude</label>
+                    <input type="text" id="longitude" name="longitude" value="<?= htmlspecialchars($farm['longitude'] ?? '') ?>" step="any"
+                        class="w-full bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary px-4 py-2.5 font-mono text-sm">
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="button" onclick="getLocation()" class="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-bold">
+                    <span class="material-symbols-outlined text-lg">location_on</span>
+                    <span>Use Current Device Location</span>
+                </button>
+                <script>
+                function getLocation() {
+                    if (navigator.geolocation) {
+                        const btn = event.currentTarget;
+                        const originalContent = btn.innerHTML;
+                        btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span><span>Detecting...</span>';
+                        btn.disabled = true;
+
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                document.getElementById('latitude').value = position.coords.latitude.toFixed(7);
+                                document.getElementById('longitude').value = position.coords.longitude.toFixed(7);
+                                btn.innerHTML = originalContent;
+                                btn.disabled = false;
+                            },
+                            (error) => {
+                                alert("Error detecting location: " + error.message);
+                                btn.innerHTML = originalContent;
+                                btn.disabled = false;
+                            }
+                        );
+                    } else {
+                        alert("Geolocation is not supported by this browser.");
+                    }
+                }
+                </script>
             </div>
         </section>
 

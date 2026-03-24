@@ -33,3 +33,10 @@ Thumbs.db
 temp/
 tmp/
 tests/ 
+action_plan.md
+gaps_remediation_action_plan.md
+Implementation_plan.md
+Technical_Gaps_Remediation_Plan.md
+UI_Screen_Map.md
+Database_schema.md
+API_Endpoints.md

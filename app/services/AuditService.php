@@ -17,20 +17,29 @@ class AuditService
      * Log an action to the audit_logs table with hash-chain integrity.
      * Each log entry includes a hash of the row data plus the previous entry's hash.
      */
-    public function log(int $userId, string $action, string $entity, ?int $entityId = null): void
+    public function log(int $userId, string $action, string $entity, ?int $entityId = null, bool $isImportant = false, ?array $targetRoles = null): void
     {
         $tenantId = current_user()['tenant_id'] ?? 1;
         
+        // Auto-detect target roles if not provided for important activities
+        if ($isImportant && $targetRoles === null) {
+            $targetRoles = $this->detectTargetRoles($action, $entity);
+        }
+
+        $targetRolesStr = $targetRoles ? implode(',', $targetRoles) : null;
+
         // Get the previous hash (from the most recent log entry for this tenant)
         $previousHash = $this->getPreviousHash($tenantId);
         
-        // Prepare row data for hashing (exclude hash fields themselves)
+        // Prepare row data for hashing
         $rowData = [
             'tenant_id' => $tenantId,
             'user_id'   => $userId,
             'action'    => $action,
             'entity'    => $entity,
             'entity_id' => $entityId,
+            'is_important' => $isImportant ? 1 : 0,
+            'target_roles' => $targetRolesStr,
             'created_at' => date('Y-m-d H:i:s')
         ];
         
@@ -38,8 +47,8 @@ class AuditService
         $rowHash = $this->computeRowHash($rowData, $previousHash);
         
         $stmt = $this->db->prepare('
-            INSERT INTO audit_logs (tenant_id, user_id, action, entity, entity_id, previous_hash, row_hash, created_at)
-            VALUES (:tenant_id, :user_id, :action, :entity, :entity_id, :previous_hash, :row_hash, NOW())
+            INSERT INTO audit_logs (tenant_id, user_id, action, entity, entity_id, is_important, target_roles, previous_hash, row_hash, created_at)
+            VALUES (:tenant_id, :user_id, :action, :entity, :entity_id, :is_important, :target_roles, :previous_hash, :row_hash, NOW())
         ');
         $stmt->execute([
             'tenant_id'    => $tenantId,
@@ -47,9 +56,29 @@ class AuditService
             'action'       => $action,
             'entity'       => $entity,
             'entity_id'    => $entityId,
+            'is_important' => $isImportant ? 1 : 0,
+            'target_roles' => $targetRolesStr,
             'previous_hash' => $previousHash,
             'row_hash'     => $rowHash
         ]);
+    }
+
+    /**
+     * Automatically determine target roles based on action and entity.
+     */
+    private function detectTargetRoles(string $action, string $entity): array
+    {
+        $roles = ['owner', 'supervisor']; // Default targets for most important actions
+
+        if ($entity === 'payroll') {
+            $roles[] = 'accountant';
+        }
+
+        if (str_contains($action, 'assign') || str_contains($action, 'approval')) {
+            $roles[] = 'worker';
+        }
+
+        return array_unique($roles);
     }
 
     /**
@@ -75,12 +104,14 @@ class AuditService
     {
         // Serialize row data in a consistent order
         $dataString = sprintf(
-            '%d|%d|%s|%s|%d|%s|%s',
+            '%d|%d|%s|%s|%d|%d|%s|%s|%s',
             $rowData['tenant_id'],
             $rowData['user_id'] ?? 0,
             $rowData['action'],
             $rowData['entity'],
             $rowData['entity_id'] ?? 0,
+            $rowData['is_important'],
+            $rowData['target_roles'] ?? '',
             $rowData['created_at'],
             $previousHash ?? ''
         );
@@ -96,7 +127,7 @@ class AuditService
     {
         $errors = [];
         $stmt = $this->db->prepare('
-            SELECT id, tenant_id, user_id, action, entity, entity_id, previous_hash, row_hash, created_at
+            SELECT id, tenant_id, user_id, action, entity, entity_id, is_important, target_roles, previous_hash, row_hash, created_at
             FROM audit_logs 
             WHERE tenant_id = :tenant_id 
             ORDER BY id ASC
@@ -113,6 +144,8 @@ class AuditService
                 'action'    => $log['action'],
                 'entity'    => $log['entity'],
                 'entity_id' => $log['entity_id'],
+                'is_important' => $log['is_important'],
+                'target_roles' => $log['target_roles'],
                 'created_at' => $log['created_at']
             ];
             $expectedHash = $this->computeRowHash($rowData, $previousHash);
@@ -150,12 +183,12 @@ class AuditService
     /**
      * Helper to log an action for the currently logged-in user.
      */
-    public static function logAction(string $action, string $entity, ?int $entityId = null): void
+    public static function logAction(string $action, string $entity, ?int $entityId = null, bool $isImportant = false, ?array $targetRoles = null): void
     {
         $user = current_user();
         if (!$user) return;
 
         $instance = new self();
-        $instance->log($user['id'], $action, $entity, $entityId);
+        $instance->log($user['id'], $action, $entity, $entityId, $isImportant, $targetRoles);
     }
 }

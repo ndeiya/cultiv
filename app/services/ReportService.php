@@ -78,6 +78,9 @@ class ReportService
                         ]);
                     }
                 }
+                
+                // Also log as an important activity
+                AuditService::logAction('crop_health_alert', 'report', $reportId, true, ['owner', 'supervisor']);
             }
 
             return [

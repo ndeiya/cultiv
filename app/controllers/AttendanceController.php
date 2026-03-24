@@ -39,7 +39,8 @@ class AttendanceController {
             }
 
             $result = $this->attendanceService->clockIn($user['farm_id'], $userId, $lat, $lng);
-            AuditService::logAction('clock_in', 'attendance', $result['id'] ?? null);
+            $isImportant = ($result['status'] !== 'normal');
+            AuditService::logAction('clock_in', 'attendance', $result['id'] ?? null, $isImportant, ['supervisor', 'owner']);
             return json_response($result, 201);
         } catch (Exception $e) {
             return json_response(['error' => $e->getMessage()], 400);

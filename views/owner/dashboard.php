@@ -71,7 +71,10 @@ include VIEWS_PATH . '/layouts/app_header.php';
             </div>
         </div>
 
-        <!-- NEW: Expense Breakdown -->
+        <!-- Pending Submissions Row -->
+        <?php include VIEWS_PATH . '/shared/widgets/pending_submissions.php'; ?>
+
+        <!-- Team Attendance Overview -->
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm p-4">
             <?php 
                 $expense_breakdown = $stats['expenseBreakdown'] ?? [];
@@ -83,16 +86,13 @@ include VIEWS_PATH . '/layouts/app_header.php';
     <!-- Quick Management -->
     <div class="grid md:grid-cols-2 gap-4">
         <!-- Recent Activity -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm p-4">
-            <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary text-sm">history</span>
-                Recent Activity
-            </h3>
-            <div class="text-center py-8 text-sm text-slate-400">
-                <span class="material-symbols-outlined text-3xl mb-2 block">inbox</span>
-                No recent activity
-            </div>
-        </div>
+        <?php 
+            $activities = $stats['recentActivity'] ?? [];
+            include VIEWS_PATH . '/shared/widgets/recent_activity.php'; 
+        ?>
+
+        <!-- Pending Submissions -->
+        <?php include VIEWS_PATH . '/shared/widgets/pending_submissions.php'; ?>
 
         <!-- Quick Actions -->
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm p-4">

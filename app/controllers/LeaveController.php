@@ -48,7 +48,7 @@ class LeaveController
 
         try {
             $this->leaveService->createRequest($data);
-            AuditService::logAction('request_leave', 'leave_requests');
+            AuditService::logAction('request_leave', 'leave_requests', null, true, ['owner', 'supervisor']);
             $_SESSION['success'] = "Leave request submitted successfully.";
             redirect('/worker/leave/history');
         } catch (Exception $e) {
@@ -111,7 +111,7 @@ class LeaveController
                 $this->leaveService->rejectRequest($id, $user['id'], $reason);
                 $_SESSION['success'] = "Leave request rejected.";
             }
-            AuditService::logAction($action . '_leave', 'leave_requests', $id);
+            AuditService::logAction($action . '_leave', 'leave_requests', $id, true, ['worker', 'owner', 'supervisor']);
         } catch (Exception $e) {
             $_SESSION['error'] = "Error updating leave request: " . $e->getMessage();
         }

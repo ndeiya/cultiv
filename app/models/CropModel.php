@@ -112,4 +112,32 @@ class CropModel extends BaseModel
         );
         return (float) $stmt->fetchColumn() ?: 0.0;
     }
+
+    /**
+     * Get all pending items for a specific farm.
+     */
+    public function getPendingByFarm(int $farmId): array
+    {
+        $stmt = $this->scopedQuery(
+            'SELECT r.*, u.name as updated_by_name 
+             FROM ' . $this->table . ' r 
+             LEFT JOIN users u ON r.updated_by = u.id 
+             WHERE r.farm_id = :farm_id AND r.tenant_id = :tenant_id AND r.approval_status = \'pending\' 
+             ORDER BY r.updated_at DESC',
+            ['farm_id' => $farmId]
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Update approval status (scoped to tenant and farm).
+     */
+    public function updateApprovalStatus(int $id, int $farmId, string $status): bool
+    {
+        $stmt = $this->scopedQuery(
+            'UPDATE ' . $this->table . ' SET approval_status = :status, updated_at = NOW() WHERE id = :id AND farm_id = :farm_id AND tenant_id = :tenant_id',
+            ['id' => $id, 'farm_id' => $farmId, 'status' => $status]
+        );
+        return $stmt->rowCount() > 0;
+    }
 }

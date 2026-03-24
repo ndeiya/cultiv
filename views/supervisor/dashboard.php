@@ -8,16 +8,9 @@ include VIEWS_PATH . '/layouts/app_header.php';
 
 <div class="space-y-6">
     
-    <!-- Stat Cards Row -->
-        <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary/10 shadow-sm">
-            <div class="flex items-center gap-2 mb-2">
-                <span class="material-symbols-outlined text-sm text-primary">assignment</span>
-                <span class="text-xs font-medium text-slate-500">Pending Tasks</span>
-            </div>
-            <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-bold"><?= htmlspecialchars($stats['pendingTasks']) ?></span>
-            </div>
         </div>
+
+        <?php include VIEWS_PATH . '/shared/widgets/pending_submissions.php'; ?>
     </div>
 
     <!-- Team Attendance Overview -->
@@ -72,44 +65,11 @@ include VIEWS_PATH . '/layouts/app_header.php';
         <?php endif; ?>
     </div>
 
-    <!-- Recent Task Activity -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm p-4">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">history</span>
-                Recent Task Activity
-            </h3>
-            <a href="/<?= $user['role'] ?>/tasks" class="text-xs font-bold text-primary hover:underline">Manage All Tasks</a>
-        </div>
-        <div class="space-y-4">
-            <?php if (empty($stats['recentTasks'])): ?>
-                <p class="text-center text-sm text-slate-400 py-4">No tasks assigned yet.</p>
-            <?php else: ?>
-                <?php foreach ($stats['recentTasks'] as $task): ?>
-                    <div class="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                        <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined text-primary text-sm">assignment</span>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-start">
-                                <p class="text-sm font-bold truncate"><?= e($task['title']) ?></p>
-                                <?php
-                                $status_class = [
-                                    'completed' => 'text-green-500',
-                                    'in_progress' => 'text-orange-500',
-                                    'pending' => 'text-blue-500',
-                                    'cancelled' => 'text-slate-400'
-                                ][$task['status']] ?? 'text-slate-500';
-                                ?>
-                                <span class="text-[10px] font-bold uppercase <?= $status_class ?>"><?= str_replace('_', ' ', $task['status']) ?></span>
-                            </div>
-                            <p class="text-xs text-slate-500">Assigned to <span class="font-medium text-slate-700 dark:text-slate-300"><?= e($task['assigned_to_name']) ?></span></p>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </div>
+    <!-- Recent Activity -->
+    <?php 
+        $activities = $stats['recentActivity'] ?? [];
+        include VIEWS_PATH . '/shared/widgets/recent_activity.php'; 
+    ?>
 </div>
 
 <?php include VIEWS_PATH . '/layouts/app_footer.php'; ?>

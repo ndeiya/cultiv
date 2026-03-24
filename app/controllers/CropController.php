@@ -135,6 +135,37 @@ class CropController
     }
 
     /**
+     * Web: Bulk Delete crops
+     */
+    public function bulkDelete(): void
+    {
+        role_gate(['owner', 'supervisor']);
+        require_csrf();
+
+        $user = current_user();
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $ids = $input['ids'] ?? [];
+
+        if (empty($ids)) {
+            json_response(['success' => false, 'message' => 'No items selected.'], 400);
+            return;
+        }
+
+        $successCount = 0;
+        foreach ($ids as $id) {
+            if ($this->cropModel->delete((int)$id, $user['farm_id'])) {
+                $successCount++;
+                AuditService::logAction('delete', 'crop', $id);
+            }
+        }
+
+        json_response([
+            'success' => true, 
+            'message' => "Successfully deleted {$successCount} crops."
+        ]);
+    }
+
+    /**
      * API: List all crops
      */
     public function apiIndex(): void

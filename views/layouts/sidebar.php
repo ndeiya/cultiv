@@ -12,6 +12,7 @@ $navItems = match($role) {
     'owner' => [
         ['id' => 'dashboard',  'icon' => 'dashboard',    'label' => 'Dashboard',  'url' => '/owner/dashboard'],
         ['id' => 'workforce',  'icon' => 'group',        'label' => 'Workforce',  'url' => '/owner/workers'],
+        ['id' => 'roster',     'icon' => 'calendar_month', 'label' => 'Shift Roster', 'url' => '/owner/roster'],
         ['id' => 'attendance', 'icon' => 'schedule',     'label' => 'Attendance', 'url' => '/owner/attendance'],
         ['id' => 'reports',    'icon' => 'description',  'label' => 'Reports',    'url' => '/owner/reports'],
         ['id' => 'crops',      'icon' => 'grass',        'label' => 'Crops',      'url' => '/owner/crops'],
@@ -24,6 +25,7 @@ $navItems = match($role) {
     ],
     'supervisor' => [
         ['id' => 'dashboard',  'icon' => 'dashboard',    'label' => 'Dashboard',  'url' => '/supervisor/dashboard'],
+        ['id' => 'roster',     'icon' => 'calendar_month', 'label' => 'Shift Roster', 'url' => '/supervisor/roster'],
         ['id' => 'attendance', 'icon' => 'schedule',     'label' => 'Attendance', 'url' => '/supervisor/attendance'],
         ['id' => 'reports',    'icon' => 'description',  'label' => 'Reports',    'url' => '/supervisor/reports'],
         ['id' => 'crops',      'icon' => 'grass',        'label' => 'Crops',      'url' => '/supervisor/crops'],

@@ -41,7 +41,9 @@ class SettingsController
 
         // Validate
         $name = sanitize_input($_POST['name'] ?? '');
-        $geofenceRadius = (int)($_POST['geofence_radius'] ?? 200);
+        $geofenceRadius = (int)($_POST['geofence_radius_metres'] ?? 200);
+        $latitude = $_POST['latitude'] !== '' ? filter_var($_POST['latitude'], FILTER_VALIDATE_FLOAT) : null;
+        $longitude = $_POST['longitude'] !== '' ? filter_var($_POST['longitude'], FILTER_VALIDATE_FLOAT) : null;
         $overtimeThreshold = (int)($_POST['overtime_threshold'] ?? 40);
         $defaultPaymentType = sanitize_input($_POST['default_payment_type'] ?? 'hourly');
         $waPhoneNumberId = sanitize_input($_POST['wa_phone_number_id'] ?? '');
@@ -61,7 +63,9 @@ class SettingsController
         $stmt = $this->db->prepare('
             UPDATE farms SET 
                 name = :name, 
-                geofence_radius = :radius,
+                geofence_radius_metres = :radius,
+                latitude = :latitude,
+                longitude = :longitude,
                 overtime_threshold = :overtime,
                 default_payment_type = :payment_type,
                 wa_phone_number_id = :wa_phone_number_id,
@@ -72,6 +76,8 @@ class SettingsController
         $success = $stmt->execute([
             'name' => $name,
             'radius' => $geofenceRadius,
+            'latitude' => $latitude,
+            'longitude' => $longitude,
             'overtime' => $overtimeThreshold,
             'payment_type' => $defaultPaymentType,
             'wa_phone_number_id' => $waPhoneNumberId,

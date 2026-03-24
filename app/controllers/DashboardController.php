@@ -41,6 +41,8 @@ class DashboardController
         $user = current_user();
 
         $stats = $this->dashboardService->getSupervisorStats($user['farm_id']);
+        $stats['pendingSummary'] = $this->dashboardService->getPendingSummary($user['farm_id']);
+        $stats['recentActivity'] = $this->dashboardService->getRecentActivity($user['farm_id'], $user['role']);
 
         view('supervisor/dashboard', [
             'user'       => $user,
@@ -58,6 +60,8 @@ class DashboardController
         $user = current_user();
 
         $stats = $this->dashboardService->getOwnerStats($user['farm_id']);
+        $stats['pendingSummary'] = $this->dashboardService->getPendingSummary($user['farm_id']);
+        $stats['recentActivity'] = $this->dashboardService->getRecentActivity($user['farm_id'], $user['role']);
 
         view('owner/dashboard', [
             'user'       => $user,
@@ -75,6 +79,7 @@ class DashboardController
         $user = current_user();
 
         $stats = $this->dashboardService->getAccountantStats($user['farm_id']);
+        $stats['recentActivity'] = $this->dashboardService->getRecentActivity($user['farm_id'], $user['role']);
 
         view('accountant/dashboard', [
             'user'       => $user,
